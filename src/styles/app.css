@@ -303,6 +303,433 @@
     }
   }
 
+  /* Voile selon la scène : section parcours = simple vignettage haut/bas */
+  html[data-scene="course"] .map-scrim,
+  html[data-scene="content"] .map-scrim {
+    background:
+      linear-gradient(180deg, rgb(13 28 20 / 0.55) 0%, rgb(13 28 20 / 0) 22%),
+      linear-gradient(0deg, rgb(13 28 20 / 0.7) 0%, rgb(13 28 20 / 0) 30%);
+  }
+
+  .section-opaque {
+    position: relative;
+    background: var(--sapin);
+  }
+
+  /* ---------- Section parcours ---------- */
+  .course {
+    position: relative;
+    height: 520vh;
+  }
+  @media (max-width: 640px) {
+    .course {
+      height: 360vh;
+    }
+  }
+  .course__stage {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow: hidden;
+    /* transparent aux clics : l'attribution de la carte, dessous, reste cliquable */
+    pointer-events: none;
+  }
+  .course__intro {
+    position: absolute;
+    left: clamp(1rem, 5vw, 5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 30rem;
+    padding: 1.4rem 1.5rem;
+    background: rgb(13 28 20 / 0.82);
+    border-left: 4px solid var(--maillot);
+    transition:
+      opacity 400ms ease,
+      transform 400ms ease;
+  }
+  .course__intro.is-gone {
+    opacity: 0;
+    transform: translateY(-58%);
+  }
+  .course__kicker {
+    color: var(--fougere);
+    letter-spacing: 0.14em;
+    font-size: 0.95rem;
+  }
+  .course__title {
+    font-weight: 900;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    margin-top: 0.4rem;
+  }
+  .course__hint {
+    margin-top: 0.75rem;
+    color: color-mix(in oklab, var(--brume) 78%, transparent);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  /* HUD TV */
+  .hud {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  }
+  @media (min-width: 640px) {
+    .hud {
+      left: 1.25rem;
+      top: 1.25rem;
+    }
+  }
+  .hud__cell {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    background: rgb(0 0 0 / 0.86);
+    color: var(--brume);
+    padding: 0.5rem 0.75rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    border-right: 1px solid rgb(255 255 255 / 0.08);
+  }
+  .hud__cell--km {
+    background: var(--maillot);
+    color: var(--sapin);
+  }
+  .hud__cell--km .hud__label,
+  .hud__cell--km .hud__muted {
+    color: rgb(20 40 29 / 0.7);
+  }
+  .hud__label {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--maillot);
+  }
+  .hud__muted {
+    font-size: 0.9rem;
+    color: color-mix(in oklab, var(--brume) 65%, transparent);
+  }
+  @media (max-width: 640px) {
+    .hud__cell--wide {
+      display: none;
+    }
+    .hud__cell {
+      font-size: 1.15rem;
+      padding: 0.45rem 0.6rem;
+    }
+  }
+
+  /* Fiche étape */
+  .stage-card {
+    position: absolute;
+    right: clamp(0.75rem, 3vw, 2.5rem);
+    top: 32%;
+    width: min(22rem, calc(100vw - 1.5rem));
+    padding: 1rem 1.15rem 1.1rem;
+    background: rgb(0 0 0 / 0.86);
+    border-top: 4px solid var(--fougere);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+    transform: translateX(calc(100% + 3rem));
+    opacity: 0;
+    transition:
+      transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 300ms ease;
+  }
+  .stage-card.is-visible {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  @media (max-width: 640px) {
+    .stage-card {
+      top: 4.2rem;
+    }
+  }
+  .stage-card__kicker {
+    color: var(--fougere);
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+  }
+  .stage-card__title {
+    margin-top: 0.35rem;
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: var(--brume);
+  }
+  .stage-card__stats {
+    margin-top: 0.5rem;
+    font-size: 1.05rem;
+    color: color-mix(in oklab, var(--brume) 85%, transparent);
+    line-height: 1.25;
+  }
+
+  /* Flamme rouge */
+  .flamme-alert {
+    position: absolute;
+    left: 50%;
+    top: 5.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 1rem 0.55rem 0.75rem;
+    background: var(--flamme);
+    color: var(--brume);
+    font-size: 1.5rem;
+    font-weight: 900;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+    transform: translate(-50%, -1rem) scale(0.9);
+    opacity: 0;
+    transition:
+      transform 350ms cubic-bezier(0.3, 1.6, 0.5, 1),
+      opacity 250ms ease;
+  }
+  @media (min-width: 640px) {
+    .flamme-alert {
+      top: 1.25rem;
+    }
+  }
+  .flamme-alert.is-visible {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+  .flamme-alert__sub {
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    opacity: 0.85;
+  }
+  .flamme-alert__flag {
+    width: 1.1rem;
+    height: 1.4rem;
+    background: var(--brume);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+  .flamme-alert.is-visible .flamme-alert__flag {
+    animation: flag-wave 900ms ease-in-out infinite;
+    transform-origin: left center;
+  }
+  @keyframes flag-wave {
+    50% {
+      transform: scaleX(0.7) skewY(6deg);
+    }
+  }
+
+  /* YARD 01 → 02 */
+  .yard-flip {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    transform: translate(-50%, -40%);
+    text-align: center;
+    padding: 1.25rem 2rem 1.4rem;
+    background: rgb(0 0 0 / 0.88);
+    border-bottom: 4px solid var(--maillot);
+    opacity: 0;
+    transition:
+      opacity 350ms ease,
+      transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .yard-flip.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  .yard-flip__label {
+    color: var(--maillot);
+    letter-spacing: 0.2em;
+    font-size: 1rem;
+  }
+  .yard-flip__digits {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-size: clamp(3.5rem, 12vw, 7rem);
+    font-weight: 900;
+    margin-top: 0.3rem;
+  }
+  .yard-flip__digits > span:first-child {
+    color: color-mix(in oklab, var(--brume) 45%, transparent);
+  }
+  .yard-flip__arrow {
+    font-size: 0.5em;
+    color: var(--fougere);
+  }
+  .yard-flip.is-visible [data-yard-to] {
+    display: inline-block;
+    animation: flip-in 600ms 150ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  @keyframes flip-in {
+    from {
+      transform: rotateX(90deg);
+      opacity: 0;
+    }
+  }
+  .yard-flip__sub {
+    margin-top: 0.6rem;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    color: color-mix(in oklab, var(--brume) 80%, transparent);
+  }
+
+  /* Mini-profil (au-dessus des coins attribution / logo) */
+  .mini-profile {
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 2.6rem;
+    height: 86px;
+    container-type: inline-size;
+    background: rgb(0 0 0 / 0.45);
+    border-top: 1px solid rgb(255 255 255 / 0.12);
+  }
+  @media (max-width: 640px) {
+    .mini-profile {
+      height: 64px;
+      bottom: 2.2rem;
+    }
+  }
+  .mini-profile svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .mini-profile__cursor {
+    position: absolute;
+    left: 0;
+    top: -6px;
+    bottom: 0;
+    width: 0;
+    will-change: transform;
+  }
+  .mini-profile__cursor::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 6px;
+    bottom: 0;
+    width: 2px;
+    background: var(--maillot);
+  }
+  .mini-profile__cursor > span {
+    position: absolute;
+    left: -6px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--maillot);
+    border: 2px solid var(--sapin);
+  }
+
+  /* Marqueurs carte (puck, panneaux) : visibles seulement dans la scène parcours */
+  .maplibregl-map:not(.is-course) .puck,
+  .maplibregl-map:not(.is-course) .km-panel {
+    display: none;
+  }
+  .puck {
+    position: relative;
+    width: 22px;
+    height: 22px;
+  }
+  .puck__dot {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--maillot);
+    border: 3px solid var(--sapin);
+    box-shadow: 0 0 0 2px rgb(242 194 48 / 0.45);
+  }
+  .puck__halo {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: rgb(242 194 48 / 0.55);
+    animation: puck-pulse 1.6s ease-out infinite;
+  }
+  @keyframes puck-pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(3.2);
+      opacity: 0;
+    }
+  }
+  .km-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 300ms ease,
+      transform 300ms ease;
+    pointer-events: none;
+  }
+  .km-panel::after {
+    /* le mât */
+    content: "";
+    width: 2px;
+    height: 26px;
+    background: color-mix(in oklab, var(--brume) 70%, transparent);
+  }
+  .km-panel.is-near {
+    opacity: 1;
+    transform: none;
+  }
+  .km-panel.is-near.is-passed {
+    opacity: 0.55;
+  }
+  .km-panel__text {
+    font-family: var(--font-tv);
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.35rem 0.55rem;
+    background: rgb(0 0 0 / 0.86);
+    color: var(--brume);
+    border-bottom: 3px solid var(--fougere);
+    white-space: nowrap;
+  }
+  .km-panel--flamme .km-panel__text {
+    background: var(--flamme);
+    border-bottom-color: var(--brume);
+  }
+  .km-panel__flag {
+    width: 26px;
+    height: 20px;
+    margin-bottom: 2px;
+    background: var(--flamme);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    align-self: flex-start;
+    margin-left: 50%;
+  }
+  .km-panel--start .km-panel__text {
+    border-bottom-color: var(--maillot);
+  }
+
+  /* Mouvement réduit : la section parcours devient une vue statique */
+  html.reduced-motion .course {
+    height: auto;
+  }
+  html.reduced-motion .course__stage {
+    position: relative;
+    height: 100dvh;
+  }
+  html.reduced-motion .course__intro {
+    top: 6.5rem;
+    transform: none;
+  }
+  html.reduced-motion .puck,
+  html.reduced-motion .stage-card,
+  html.reduced-motion .flamme-alert,
+  html.reduced-motion .yard-flip {
+    display: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .map-poster__line {
       animation: none;
@@ -313,6 +740,10 @@
     }
     .cta {
       transition: none;
+    }
+    .puck__halo,
+    .flamme-alert.is-visible .flamme-alert__flag {
+      animation: none;
     }
   }
 }

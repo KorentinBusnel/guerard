@@ -2,9 +2,9 @@
  * Textes de la page, dérivés UNIQUEMENT de `event.ts` et des données du parcours.
  * Utilisé au build (gabarit `{{clé}}` de index.html, cf. vite.config.ts) et au runtime.
  */
-import { event, format, tbc } from "./event";
-import { route } from "../data/route";
-import { km, num } from "../lib/format";
+import { event, format, tbc } from "./event.ts";
+import { route } from "../data/route.ts";
+import { km, num } from "../lib/format.ts";
 
 const TZ = "Europe/Paris";
 

@@ -14,3 +14,16 @@ export const palette = {
   maillot: "#F2C230",
   flamme: "#C8302B",
 } as const;
+
+/**
+ * Pentes du profil d'étape (codes du Tour : vert < 3 %, jaune 3–6 %, orange 6–9 %,
+ * rouge > 9 %), désaturées pour que le jaune maillot reste seul saturé à l'écran.
+ */
+export const gradeBins = [
+  { max: 3, color: "#7E9452", label: "< 3 %" },
+  { max: 6, color: "#B39E52", label: "3–6 %" },
+  { max: 9, color: "#B26E3E", label: "6–9 %" },
+  { max: Infinity, color: palette.flamme, label: "> 9 %" },
+] as const;
+
+export const gradeBin = (grade: number) => gradeBins.findIndex((b) => grade < b.max);

@@ -1,9 +1,11 @@
 /**
- * Démarrage de la carte (chunk chargé à part) : création, dessin du tracé, orbite.
+ * Démarrage de la carte (chunk chargé à part) : création, dessin du tracé, scènes.
  */
 import { gsap } from "gsap";
 import { createForestMap } from "./forestMap";
 import { HeliCamera } from "./camera";
+import { initCourseMap } from "./course";
+import { state } from "../state";
 
 export interface BootOptions {
   mobile: boolean;
@@ -20,33 +22,35 @@ export async function bootMap({ mobile, reducedMotion, badge }: BootOptions) {
   if (fm.styleMode === "sdk-dev" && import.meta.env.DEV) badge("Style : repli SDK (dev)", "muted");
 
   const camera = new HeliCamera(fm.map, { mobile, reducedMotion });
-  camera.orbit();
+  let introDone = reducedMotion;
+  // Applique tout de suite la scène courante (orbite, poursuite ou pause).
+  initCourseMap(fm, camera, { mobile, reducedMotion, introDone: () => introDone });
 
-  // Les tuiles du cadrage d'orbite d'abord, puis on dévoile la carte et on dessine.
+  // Les tuiles du premier cadrage d'abord, puis on dévoile la carte et on dessine.
   await new Promise<void>((resolve) => {
     if (fm.map.loaded()) resolve();
     else fm.map.once("idle", () => resolve());
   });
   document.documentElement.classList.add("map-ready");
 
-  if (reducedMotion) {
-    fm.setTrack({ drawn: 1, travelled: 1, remaining: false });
-  } else {
+  if (!introDone) {
     const draw = { p: 0 };
     gsap.to(draw, {
       p: 1,
       duration: DRAW_S,
       delay: 0.4,
       ease: "power2.inOut",
-      onUpdate: () => fm.setTrack({ drawn: draw.p, travelled: draw.p, remaining: false }),
+      onUpdate: () => {
+        // si l'on a déjà quitté le hero, la scène gère le tracé elle-même
+        if (state.scene === "hero") fm.setTrack({ drawn: draw.p, travelled: draw.p, remaining: false });
+      },
+      onComplete: () => {
+        introDone = true;
+      },
     });
+  } else if (state.scene !== "course") {
+    fm.setTrack({ drawn: 1, travelled: 1, remaining: false });
   }
-
-  // Orbite en pause quand le hero sort de l'écran.
-  const hero = document.getElementById("hero")!;
-  new IntersectionObserver(([entry]) => camera.setPaused("hero-offscreen", !entry.isIntersecting), {
-    threshold: 0.05,
-  }).observe(hero);
 
   document.body.setAttribute("data-map-ready", "");
   if (import.meta.env.DEV) Object.assign(window, { __map: fm.map, __fm: fm, __camera: camera, __gsap: gsap });

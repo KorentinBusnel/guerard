@@ -1,4 +1,4 @@
-import raw from "./route.json";
+import raw from "./route.json" with { type: "json" };
 
 /** Sortie de `npm run prepare:route` (scripts/prepare-route.ts). */
 export interface RouteData {

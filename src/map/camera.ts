@@ -5,6 +5,7 @@
 import type * as maplibregl from "maplibre-gl";
 import type { PaddingOptions } from "maplibre-gl";
 import { routeBounds } from "../data/route";
+import { lerpAngle } from "../lib/routeMath";
 
 export type CameraMode = "orbit" | "follow" | "still";
 
@@ -25,6 +26,8 @@ export class HeliCamera {
   private follow?: () => FollowTarget;
   private followPitch = 60;
   private followZoom = 15.5;
+  private followPadding: PaddingOptions = { top: 0, bottom: 0, left: 0, right: 0 };
+  private lastCenter: [number, number] = [0, 0];
 
   constructor(
     private readonly map: maplibregl.Map,
@@ -64,12 +67,18 @@ export class HeliCamera {
     this.setMode(this.opts.reducedMotion ? "still" : "orbit");
   }
 
-  /** Poursuite : `target()` est relu à chaque image (position et cap déjà lissés). */
-  followTarget(target: () => FollowTarget, pitch: number, zoom: number) {
+  /**
+   * Poursuite : `target()` est relu à chaque image. Le centre suit le coureur au mètre
+   * près (le puck ne glisse pas à l'écran) ; le cap, déjà moyenné sur ~150 m dans les
+   * données, est en plus amorti dans le temps pour absorber les lacets serrés.
+   */
+  followTarget(target: () => FollowTarget, view: { pitch: number; zoom: number; padding: PaddingOptions }) {
     this.follow = target;
-    this.followPitch = pitch;
-    this.followZoom = zoom;
-    this.applyFollow();
+    this.followPitch = view.pitch;
+    this.followZoom = view.zoom;
+    this.followPadding = view.padding;
+    this.bearing = target().bearing;
+    this.applyFollow(0, true);
     this.setMode(this.opts.reducedMotion ? "still" : "follow");
   }
 
@@ -95,15 +104,20 @@ export class HeliCamera {
     this.loop();
   }
 
-  private applyFollow() {
+  private applyFollow(dt: number, force = false) {
     if (!this.follow) return;
     const { center, bearing } = this.follow();
+    const next = force ? bearing : lerpAngle(this.bearing, bearing, 1 - Math.exp(-dt * 4));
+    const moved = Math.abs(center[0] - this.lastCenter[0]) + Math.abs(center[1] - this.lastCenter[1]) > 1e-9;
+    if (!force && !moved && Math.abs(((next - this.bearing + 540) % 360) - 180) < 0.01) return; // rien à redessiner
+    this.bearing = next;
+    this.lastCenter = center;
     this.map.jumpTo({
       center,
-      bearing,
+      bearing: this.bearing,
       pitch: this.followPitch,
       zoom: this.followZoom,
-      padding: { top: 0, bottom: 0, left: 0, right: 0 },
+      padding: this.followPadding,
     });
   }
 
@@ -123,7 +137,7 @@ export class HeliCamera {
         this.bearing = (this.bearing + dt * ORBIT_DEG_PER_S) % 360;
         this.map.jumpTo({ bearing: this.bearing });
       } else if (this.mode === "follow") {
-        this.applyFollow();
+        this.applyFollow(dt);
       }
       this.raf = requestAnimationFrame(tick);
     };

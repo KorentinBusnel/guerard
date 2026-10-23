@@ -72,9 +72,61 @@
       </a>
     </header>
 
-    <main id="principe" class="relative z-10 bg-sapin">
-      <section class="mx-auto max-w-5xl px-4 py-24 sm:px-8">
-        <p class="tv text-fougere">Suite en phase 2–3</p>
+    <main class="relative z-10">
+      <section id="principe" class="section-opaque">
+        <div class="mx-auto max-w-5xl px-4 py-24 sm:px-8">
+          <p class="tv text-fougere">Le principe — phase 3</p>
+        </div>
+      </section>
+
+      <section id="parcours" class="course" aria-labelledby="parcours-title">
+        <div class="course__stage">
+          <div class="course__intro" data-course-intro>
+            <p class="tv course__kicker">Le parcours</p>
+            <h2 id="parcours-title" class="tv course__title">Suivez le maillot jaune</h2>
+            <p class="course__hint">Faites défiler : une boucle complète, du camp de base au camp de base.</p>
+          </div>
+
+          <!-- HUD TV : décoratif (aria-hidden), infos dupliquées dans le résumé texte ci-dessous -->
+          <div class="hud tv" aria-hidden="true">
+            <div class="hud__cell hud__cell--km">
+              <span class="hud__label">KM</span><span data-hud="km">0,0</span><span class="hud__muted">/ {{loopKm1}}</span>
+            </div>
+            <div class="hud__cell"><span class="hud__label">ALT</span><span data-hud="alt">0</span><span class="hud__muted">M</span></div>
+            <div class="hud__cell hud__cell--wide"><span class="hud__label">PENTE</span><span data-hud="grade">0</span><span class="hud__muted">%</span></div>
+            <div class="hud__cell hud__cell--wide hud__cell--yard"><span class="hud__label">YARD</span><span data-hud="yard">01</span></div>
+            <div class="hud__cell hud__cell--wide"><span class="hud__label">CHRONO</span><span data-hud="clock">0:00:00</span></div>
+          </div>
+
+          <aside class="stage-card" data-stage-card aria-hidden="true">
+            <p class="tv stage-card__kicker" data-stage-kicker></p>
+            <p class="tv stage-card__title" data-stage-title></p>
+            <p class="tv stage-card__stats" data-stage-stats></p>
+          </aside>
+
+          <div class="flamme-alert tv" data-flamme aria-hidden="true">
+            <span class="flamme-alert__flag" aria-hidden="true"></span>
+            <span>Flamme rouge</span><span class="flamme-alert__sub">dernier kilomètre</span>
+          </div>
+
+          <div class="yard-flip tv" data-yard-flip aria-hidden="true">
+            <p class="yard-flip__label">Yard</p>
+            <p class="yard-flip__digits"><span data-yard-from>01</span><span class="yard-flip__arrow">→</span><span data-yard-to>02</span></p>
+            <p class="yard-flip__sub">Retour au camp de base. Départ suivant à l'heure pile.</p>
+          </div>
+
+          <div class="mini-profile" aria-hidden="true">
+            <svg data-mini-profile viewBox="0 0 1000 100" preserveAspectRatio="none"></svg>
+            <div class="mini-profile__cursor" data-mini-cursor><span></span></div>
+          </div>
+        </div>
+        <div class="sr-only" data-course-summary></div>
+      </section>
+
+      <section id="suite" class="section-opaque">
+        <div class="mx-auto max-w-5xl px-4 py-24 sm:px-8">
+          <p class="tv text-fougere">Profil, compteur, infos — phase 3</p>
+        </div>
       </section>
     </main>
 

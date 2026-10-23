@@ -23,6 +23,8 @@ export const event = {
 export const format = {
   loopMinutes: 60,
   finishers: 1,
+  /** Allure de référence du chrono simulé de la section parcours (brief : ~50 min/boucle). */
+  referenceLoopMinutes: 50,
 } as const;
 
 export const tbc = (label: string) => `[${label.toUpperCase()} À CONFIRMER]`;

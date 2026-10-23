@@ -4,6 +4,8 @@ import "@fontsource-variable/inter";
 import "./styles/app.css";
 import { route } from "./data/route";
 import { daysToGo } from "./content/view";
+import { initCourse } from "./sections/course";
+import { initScenes } from "./scroll/scenes";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const mobile = window.matchMedia("(max-width: 640px)").matches;
@@ -34,6 +36,9 @@ function webgl2Available() {
 }
 
 renderCountdown();
+if (reducedMotion) document.documentElement.classList.add("reduced-motion");
+initCourse();
+initScenes({ reducedMotion });
 if (route.meta.mock) badge("Tracé MOCK — boucle fictive", "flamme");
 
 if (webgl2Available()) {

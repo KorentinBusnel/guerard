@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
-import { routeSvgPath, viewStrings } from "./src/content/view";
+import { routeSvgPath, viewStrings } from "./src/content/view.ts";
 
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
