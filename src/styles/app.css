@@ -711,6 +711,512 @@
     border-bottom-color: var(--maillot);
   }
 
+  /* ---------- Sections de contenu ---------- */
+  .wrap {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: clamp(4.5rem, 10vw, 8rem) 1rem;
+  }
+  @media (min-width: 640px) {
+    .wrap {
+      padding-inline: 2rem;
+    }
+  }
+  .kicker {
+    color: var(--fougere);
+    letter-spacing: 0.16em;
+    font-size: 0.95rem;
+  }
+  .h2 {
+    margin-top: 0.6rem;
+    font-weight: 900;
+    font-size: clamp(2.4rem, 6.5vw, 4.8rem);
+    line-height: 0.92;
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+  .link {
+    color: var(--brume);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--fougere) 70%, transparent);
+    text-underline-offset: 0.18em;
+  }
+  .link:hover {
+    text-decoration-color: var(--brume);
+  }
+  .link:focus-visible,
+  .faq__q:focus-visible,
+  .milestone__btn:focus-visible,
+  .yards__range:focus-visible {
+    outline: 3px solid var(--brume);
+    outline-offset: 3px;
+  }
+
+  /* Principe */
+  .principe {
+    display: grid;
+    gap: 2.5rem;
+    margin-top: 3rem;
+    align-items: center;
+  }
+  @media (min-width: 960px) {
+    .principe {
+      grid-template-columns: 1.25fr 1fr;
+    }
+  }
+  .stat-cards {
+    display: grid;
+    gap: 0.75rem;
+  }
+  /* Cartouches façon bas d'écran TV : chiffre à gauche, légende à droite */
+  .stat-card {
+    display: grid;
+    grid-template-columns: minmax(10.5rem, auto) 1fr;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+    background: var(--sous-bois);
+    padding: 1.1rem 1.25rem;
+    border-left: 4px solid var(--mousse);
+  }
+  @media (max-width: 480px) {
+    .stat-card {
+      grid-template-columns: 1fr;
+    }
+  }
+  .stat-card__value {
+    white-space: nowrap;
+    font-size: clamp(2.4rem, 5vw, 3.2rem);
+    font-weight: 900;
+    color: var(--brume);
+  }
+  .stat-card__value span {
+    font-size: 0.42em;
+    letter-spacing: 0.06em;
+    color: var(--fougere);
+  }
+  .stat-card__label {
+    color: color-mix(in oklab, var(--brume) 80%, transparent);
+    line-height: 1.5;
+    font-size: 0.95rem;
+  }
+  .clockloop {
+    margin: 0;
+    padding: 1.25rem;
+    background: color-mix(in oklab, var(--sous-bois) 60%, var(--sapin));
+  }
+  .clockloop__svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .clock__face {
+    fill: var(--sapin);
+    stroke: color-mix(in oklab, var(--brume) 30%, transparent);
+    stroke-width: 1.5;
+  }
+  .clock__tick {
+    stroke: color-mix(in oklab, var(--brume) 40%, transparent);
+    stroke-width: 1.5;
+  }
+  .clock__tick--major {
+    stroke: var(--brume);
+    stroke-width: 2.5;
+  }
+  .clock__hand {
+    stroke: var(--maillot);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .clock__pin {
+    fill: var(--maillot);
+  }
+  .clockloop__route {
+    fill: none;
+    stroke: var(--fougere);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+  }
+  .clockloop__dot {
+    fill: var(--maillot);
+    stroke: var(--sapin);
+    stroke-width: 1.5;
+  }
+  .clockloop__caption {
+    margin-top: 0.75rem;
+    text-align: center;
+    color: var(--fougere);
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* Road-book */
+  .roadbook {
+    margin-top: 2.5rem;
+    background: color-mix(in oklab, var(--sous-bois) 55%, var(--sapin));
+    padding: 0 0 1.25rem;
+  }
+  .roadbook__head {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 1.05rem;
+  }
+  .roadbook__head > span {
+    padding: 0.6rem 0.9rem;
+    background: rgb(0 0 0 / 0.75);
+  }
+  .roadbook__head-name {
+    background: var(--brume) !important;
+    color: var(--sapin);
+  }
+  .roadbook__scroll {
+    overflow-x: auto;
+    padding: 0.5rem 0.75rem 0;
+  }
+  .roadbook__hint {
+    display: none;
+    padding: 0.6rem 1.25rem 0;
+    font-size: 0.85rem;
+    color: color-mix(in oklab, var(--brume) 70%, transparent);
+  }
+  @media (max-width: 720px) {
+    .roadbook__hint {
+      display: block;
+    }
+  }
+  .roadbook__svg {
+    display: block;
+    width: 100%;
+    min-width: 680px;
+    height: auto;
+  }
+  .rb-grid {
+    stroke: color-mix(in oklab, var(--brume) 12%, transparent);
+    stroke-dasharray: 3 5;
+  }
+  .rb-tick {
+    stroke: color-mix(in oklab, var(--brume) 50%, transparent);
+  }
+  .rb-axis,
+  .rb-label,
+  .rb-sub {
+    font-family: var(--font-tv);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    fill: color-mix(in oklab, var(--brume) 70%, transparent);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .rb-axis--end {
+    fill: var(--brume);
+  }
+  .rb-label {
+    fill: var(--brume);
+    font-size: 19px;
+    font-weight: 900;
+  }
+  .rb-label--flamme {
+    fill: var(--brume);
+  }
+  .rb-sub {
+    font-size: 14px;
+  }
+  .rb-sub--start {
+    fill: color-mix(in oklab, var(--sapin) 85%, black);
+  }
+  .rb-bracket {
+    fill: none;
+    stroke: var(--brume);
+    stroke-width: 1.5;
+  }
+  .rb-leader {
+    stroke: color-mix(in oklab, var(--brume) 55%, transparent);
+    stroke-dasharray: 2 3;
+  }
+  .rb-flamme-pole {
+    stroke: var(--flamme);
+    stroke-width: 2;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    padding: 1rem 1.25rem 0;
+    font-size: 0.9rem;
+    color: color-mix(in oklab, var(--brume) 80%, transparent);
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .legend__swatch {
+    width: 1.1rem;
+    height: 0.8rem;
+  }
+
+  /* Compteur de yards */
+  .yards {
+    margin-top: 2.5rem;
+    max-width: 52rem;
+    background: var(--sous-bois);
+    padding: clamp(1.25rem, 4vw, 2.25rem);
+  }
+  .yards__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .yards__label {
+    color: color-mix(in oklab, var(--brume) 80%, transparent);
+  }
+  .yards__readout {
+    font-size: clamp(3.2rem, 9vw, 5rem);
+    font-weight: 900;
+    color: var(--maillot);
+  }
+  .yards__readout span {
+    font-size: 0.35em;
+    color: var(--brume);
+    letter-spacing: 0.1em;
+  }
+  .yards__range {
+    --fill: 33%;
+    width: 100%;
+    margin-top: 1rem;
+    height: 2.75rem;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  .yards__range::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(90deg, var(--maillot) var(--fill), color-mix(in oklab, var(--brume) 18%, transparent) var(--fill));
+  }
+  .yards__range::-moz-range-track {
+    height: 8px;
+    background: linear-gradient(90deg, var(--maillot) var(--fill), color-mix(in oklab, var(--brume) 18%, transparent) var(--fill));
+  }
+  .yards__range::-webkit-slider-thumb {
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    margin-top: -10px;
+    border-radius: 50%;
+    background: var(--maillot);
+    border: 4px solid var(--sapin);
+    box-shadow: 0 0 0 2px var(--maillot);
+  }
+  .yards__range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--maillot);
+    border: 4px solid var(--sapin);
+    box-shadow: 0 0 0 2px var(--maillot);
+  }
+  .yards__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+  .yards__stats div {
+    background: rgb(0 0 0 / 0.35);
+    padding: 0.8rem 0.9rem;
+  }
+  .yards__stats dt {
+    font-size: 0.8rem;
+    color: color-mix(in oklab, var(--brume) 75%, transparent);
+  }
+  .yards__stats dd {
+    margin-top: 0.3rem;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 900;
+  }
+  .yards__equiv {
+    margin-top: 1.25rem;
+    min-height: 1.5em;
+    color: var(--brume);
+    font-size: 1.05rem;
+  }
+  .milestones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+  .milestone__btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-height: 44px;
+    padding: 0.55rem 0.8rem;
+    background: rgb(0 0 0 / 0.35);
+    border: 1px solid color-mix(in oklab, var(--brume) 18%, transparent);
+    color: var(--brume);
+    cursor: pointer;
+    text-align: left;
+  }
+  .milestone__btn[aria-pressed="true"] {
+    border-color: var(--maillot);
+  }
+  .milestone__yards {
+    font-size: 1.1rem;
+    font-weight: 900;
+  }
+  .milestone__label {
+    font-size: 0.85rem;
+    color: color-mix(in oklab, var(--brume) 78%, transparent);
+  }
+
+  /* Infos pratiques */
+  .info-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+  @media (min-width: 640px) {
+    .info-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1024px) {
+    .info-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .info-card {
+    background: var(--sous-bois);
+    padding: 1.25rem 1.25rem 1.4rem;
+    border-left: 4px solid var(--ecorce);
+  }
+  .info-card__title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 0.6rem;
+  }
+  .info-card p {
+    color: color-mix(in oklab, var(--brume) 82%, transparent);
+    line-height: 1.55;
+    font-size: 0.95rem;
+  }
+  .info-card p + p {
+    margin-top: 0.35rem;
+  }
+
+  /* Inscription */
+  .inscription {
+    background:
+      radial-gradient(90% 120% at 50% 100%, color-mix(in oklab, var(--mousse) 45%, var(--sapin)) 0%, var(--sapin) 70%),
+      var(--sapin);
+    text-align: center;
+  }
+  .inscription__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .inscription__title {
+    max-width: none;
+  }
+  .inscription__meta {
+    margin: 1.25rem 0 2rem;
+    color: color-mix(in oklab, var(--brume) 80%, transparent);
+  }
+  .cta--xl {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    padding: 1.1rem 1.8rem;
+  }
+  .cta--disabled {
+    background: transparent;
+    color: var(--brume);
+    border: 2px dashed color-mix(in oklab, var(--brume) 50%, transparent);
+    box-shadow: none;
+    cursor: not-allowed;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+  }
+  .cta--disabled::after {
+    display: none;
+  }
+  .cta--disabled:hover {
+    transform: none;
+  }
+
+  /* FAQ */
+  .faq {
+    margin-top: 2.5rem;
+    max-width: 52rem;
+    border-top: 1px solid color-mix(in oklab, var(--brume) 15%, transparent);
+  }
+  .faq__item {
+    border-bottom: 1px solid color-mix(in oklab, var(--brume) 15%, transparent);
+  }
+  .faq__q {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 0.25rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05rem;
+    list-style: none;
+  }
+  .faq__q::-webkit-details-marker {
+    display: none;
+  }
+  .faq__q::after {
+    content: "+";
+    font-family: var(--font-tv);
+    font-weight: 900;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--fougere);
+    transition: transform 200ms ease;
+  }
+  .faq__item[open] .faq__q::after {
+    transform: rotate(45deg);
+  }
+  .faq__a {
+    padding: 0 0.25rem 1.25rem;
+    color: color-mix(in oklab, var(--brume) 82%, transparent);
+    line-height: 1.6;
+    max-width: 44rem;
+  }
+
+  /* Pied de page */
+  .site-footer {
+    background: color-mix(in oklab, var(--sapin) 70%, black);
+    border-top: 1px solid color-mix(in oklab, var(--brume) 10%, transparent);
+  }
+  .site-footer__inner {
+    padding-block: 3rem;
+  }
+  .site-footer__name {
+    font-size: 1.6rem;
+    font-weight: 900;
+  }
+  .site-footer__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    color: color-mix(in oklab, var(--brume) 78%, transparent);
+  }
+  .credits {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: color-mix(in oklab, var(--brume) 70%, transparent);
+  }
+  .credits--mock {
+    margin-top: 0.5rem;
+    color: #e8a39f;
+  }
+
   /* Mouvement réduit : la section parcours devient une vue statique */
   html.reduced-motion .course {
     height: auto;
@@ -744,6 +1250,9 @@
     .puck__halo,
     .flamme-alert.is-visible .flamme-alert__flag {
       animation: none;
+    }
+    .faq__q::after {
+      transition: none;
     }
   }
 }

@@ -2,8 +2,8 @@
  * Profil altimétrique façon profil d'étape du Tour : aires colorées par pente.
  * Géométrie pure (chaînes SVG), partagée par le mini-profil et le road-book.
  */
-import { route } from "../data/route";
-import { gradeBin, gradeBins } from "../styles/tokens";
+import { route } from "../data/route.ts";
+import { gradeBin, gradeBins } from "../styles/tokens.ts";
 
 export interface ProfileBox {
   width: number;

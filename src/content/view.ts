@@ -8,6 +8,9 @@ import { km, num } from "../lib/format.ts";
 
 const TZ = "Europe/Paris";
 
+/** Compteur de yards : par défaut, le nombre de boucles qui fait 100 miles. */
+export const DEFAULT_YARDS = () => Math.ceil(160_934 / route.totalM);
+
 /** Date de départ (ISO) en objet Date, heure de Paris, ou null si non fournie. */
 export function startDate(): Date | null {
   if (!event.date) return null;
@@ -55,6 +58,9 @@ export function viewStrings(): Record<string, string> {
     price: event.priceEur !== null ? `${num(event.priceEur)} €` : tbc("tarif"),
     bibs: event.bibs !== null ? num(event.bibs) : tbc("nombre de dossards"),
     registrationHref: event.registrationUrl ?? "#inscription",
+    yardsDefault: String(DEFAULT_YARDS()),
+    yardsDefaultKm: km(DEFAULT_YARDS() * route.totalM, 1),
+    yardsDefaultDplus: num(DEFAULT_YARDS() * route.dPlus),
   };
 }
 

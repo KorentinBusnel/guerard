@@ -73,9 +73,41 @@
     </header>
 
     <main class="relative z-10">
-      <section id="principe" class="section-opaque">
-        <div class="mx-auto max-w-5xl px-4 py-24 sm:px-8">
-          <p class="tv text-fougere">Le principe — phase 3</p>
+      <section id="principe" class="section-opaque" aria-labelledby="principe-title">
+        <div class="wrap">
+          <p class="tv kicker">Le principe</p>
+          <h2 id="principe-title" class="tv h2">Une boucle. Toutes les heures. Jusqu'au dernier.</h2>
+          <div class="principe">
+            <ul class="stat-cards">
+              <li class="stat-card">
+                <p class="tv stat-card__value">{{loopKm3}}<span> km</span></p>
+                <p class="stat-card__label">La boucle, en forêt. Toujours la même.</p>
+              </li>
+              <li class="stat-card">
+                <p class="tv stat-card__value">{{loopMinutes}}<span> min</span></p>
+                <p class="stat-card__label">Pour la boucler. Un départ toutes les heures, à l'heure pile.</p>
+              </li>
+              <li class="stat-card">
+                <p class="tv stat-card__value">{{finishers}}<span> seul finisher</span></p>
+                <p class="stat-card__label">Le dernier coureur encore debout.</p>
+              </li>
+            </ul>
+            <figure class="clockloop" aria-hidden="true">
+              <svg class="clockloop__svg" viewBox="0 0 270 124">
+                <g transform="translate(62 62)">
+                  <circle r="54" class="clock__face" />
+                  {{html:clockTicks}}
+                  <path d="M0 8V-42" class="clock__hand" data-clock-hand />
+                  <circle r="4.5" class="clock__pin" />
+                </g>
+                <g transform="translate(146 6) scale(1.12)">
+                  <path d="{{svg:route}}" class="clockloop__route" data-loop-path />
+                  <circle r="3.6" class="clockloop__dot" data-loop-dot />
+                </g>
+              </svg>
+              <figcaption class="tv clockloop__caption">Un tour d'horloge, une boucle</figcaption>
+            </figure>
+          </div>
         </div>
       </section>
 
@@ -123,12 +155,83 @@
         <div class="sr-only" data-course-summary></div>
       </section>
 
-      <section id="suite" class="section-opaque">
-        <div class="mx-auto max-w-5xl px-4 py-24 sm:px-8">
-          <p class="tv text-fougere">Profil, compteur, infos — phase 3</p>
+      <section id="profil" class="section-opaque" aria-labelledby="profil-title">
+        <div class="wrap">
+          <p class="tv kicker">Profil de l'étape</p>
+          <h2 id="profil-title" class="tv h2">Le road-book</h2>
+          <div class="roadbook">
+            <div class="roadbook__head tv" aria-hidden="true">
+              <span class="roadbook__head-name">Boucle</span>
+              <span>{{loopKm3}} km</span>
+              <span>D+ {{dPlus}} m</span>
+              <span>Alt. max {{eleMax}} m</span>
+            </div>
+            <div class="roadbook__scroll" tabindex="0" aria-label="Profil de l'étape (défilement horizontal)">{{html:roadbook}}</div>
+            <p class="roadbook__hint" aria-hidden="true">Faites glisser le profil →</p>
+            <ul class="legend" aria-label="Couleurs des pentes">{{html:legend}}</ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="compteur" class="section-opaque" aria-labelledby="compteur-title">
+        <div class="wrap">
+          <p class="tv kicker">Le compteur</p>
+          <h2 id="compteur-title" class="tv h2">Combien de yards&nbsp;?</h2>
+          <div class="yards">
+            <div class="yards__top">
+              <label for="yards-input" class="yards__label">Nombre de boucles</label>
+              <p class="tv yards__readout"><output id="yards-count" for="yards-input">{{yardsDefault}}</output> <span>yards</span></p>
+            </div>
+            <input id="yards-input" class="yards__range" type="range" min="1" max="72" step="1" value="{{yardsDefault}}" />
+            <dl class="yards__stats">
+              <div><dt>Distance</dt><dd class="tv"><span data-yards-km>{{yardsDefaultKm}}</span> km</dd></div>
+              <div><dt>Durée</dt><dd class="tv"><span data-yards-time>{{yardsDefault}}</span> h</dd></div>
+              <div><dt>Dénivelé +</dt><dd class="tv"><span data-yards-dplus>{{yardsDefaultDplus}}</span> m</dd></div>
+            </dl>
+            <p class="yards__equiv" data-yards-equiv aria-live="polite"></p>
+            <ul class="milestones" aria-label="Paliers">{{html:milestones}}</ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="infos" class="section-opaque" aria-labelledby="infos-title">
+        <div class="wrap">
+          <p class="tv kicker">Infos pratiques</p>
+          <h2 id="infos-title" class="tv h2">Avant le départ</h2>
+          <div class="info-grid">{{html:infos}}</div>
+        </div>
+      </section>
+
+      <section id="inscription" class="section-opaque inscription" aria-labelledby="inscription-title">
+        <div class="wrap inscription__inner">
+          <p class="tv kicker">Inscription</p>
+          <h2 id="inscription-title" class="tv h2 inscription__title">Prendre le départ</h2>
+          <p class="inscription__meta">Tarif : {{price}} · Dossards : {{bibs}} · {{date}}</p>
+          {{html:registerCta}}
+        </div>
+      </section>
+
+      <section id="faq" class="section-opaque" aria-labelledby="faq-title">
+        <div class="wrap">
+          <p class="tv kicker">FAQ</p>
+          <h2 id="faq-title" class="tv h2">Questions fréquentes</h2>
+          <div class="faq">{{html:faq}}</div>
         </div>
       </section>
     </main>
+
+    <footer class="site-footer relative z-10">
+      <div class="wrap site-footer__inner">
+        <p class="tv site-footer__name">{{name}}</p>
+        <ul class="site-footer__list">{{html:footerCredits}}</ul>
+        <p class="credits">
+          Carte : <a class="link" href="https://mapmap.ai">MapMap</a> · Données ©
+          <a class="link" href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> ·
+          © <a class="link" href="https://openmaptiles.org/">OpenMapTiles</a> · Relief : Mapzen, AWS Open Data.
+        </p>
+        {{html:mockNote}}
+      </div>
+    </footer>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

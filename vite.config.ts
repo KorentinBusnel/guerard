@@ -1,12 +1,12 @@
 import { defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { routeSvgPath, viewStrings } from "./src/content/view.ts";
-
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+import { viewHtml } from "./src/content/blocks.ts";
+import { escapeHtml } from "./src/lib/html.ts";
 
 /**
- * Gabarit statique de index.html : `{{clé}}` (texte échappé) et `{{svg:route}}`.
+ * Gabarit statique de index.html : `{{clé}}` (texte échappé), `{{html:clé}}` (blocs
+ * générés par src/content/blocks.ts) et `{{svg:route}}`.
  * Les textes viennent de src/content (event.ts + route.json) et sont écrits dans le HTML
  * au build : lisibles sans JS, indexables, sans saut de mise en page.
  */
@@ -15,8 +15,13 @@ function contentTemplate(): Plugin {
     name: "guerard-content",
     transformIndexHtml(html) {
       const strings = viewStrings();
+      const blocks = viewHtml();
       return html
         .replace(/\{\{svg:route\}\}/g, routeSvgPath())
+        .replace(/\{\{html:(\w+)\}\}/g, (match, key: string) => {
+          if (!(key in blocks)) throw new Error(`index.html : bloc inconnu ${match}`);
+          return blocks[key];
+        })
         .replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
           if (!(key in strings)) throw new Error(`index.html : clé de contenu inconnue ${match}`);
           return escapeHtml(strings[key]);
