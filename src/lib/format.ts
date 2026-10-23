@@ -1,10 +1,18 @@
-/** Formats français (virgule décimale, espace fine insécable des milliers). */
-const nf = (digits: number) =>
-  new Intl.NumberFormat("fr-FR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+/**
+ * Formats français : virgule décimale, espace fine insécable (U+202F) entre milliers,
+ * comme Intl fr-FR. Fait main : le premier Intl.NumberFormat d'une page charge les
+ * données de locale (~15 ms sur mobile), et le HUD formate à chaque image.
+ */
+function fr(v: number, digits: number): string {
+  const [int, dec] = Math.abs(v).toFixed(digits).split(".");
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+  const neg = v < 0 && Number(Math.abs(v).toFixed(digits)) !== 0;
+  return `${neg ? "-" : ""}${grouped}${dec ? `,${dec}` : ""}`;
+}
 
-export const km = (m: number, digits = 1) => nf(digits).format(m / 1000);
-export const num = (v: number, digits = 0) => nf(digits).format(v);
-export const signed = (v: number, digits = 0) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${nf(digits).format(Math.abs(v))}`;
+export const km = (m: number, digits = 1) => fr(m / 1000, digits);
+export const num = (v: number, digits = 0) => fr(v, digits);
+export const signed = (v: number, digits = 0) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${fr(Math.abs(v), digits)}`;
 export const pad2 = (v: number) => String(Math.floor(v)).padStart(2, "0");
 
 /** Durée en `h:mm:ss` ou `mm:ss`. */

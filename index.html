@@ -10,6 +10,16 @@
       name="description"
       content="{{name}} : une boucle de {{loopKm3}} km en forêt, un départ toutes les heures, jusqu'au dernier coureur debout. {{place}}."
     />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content="{{name}} — l'étape qui ne finit jamais" />
+    <meta property="og:description" content="Une boucle de {{loopKm3}} km en forêt. Un départ toutes les heures. Le dernier debout gagne." />
+    <meta property="og:url" content="{{siteUrl}}" />
+    <meta property="og:image" content="{{ogImage}}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Carte 3D de la boucle en forêt autour de {{commune}}" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body class="min-h-dvh">
     <a href="#principe" class="skip-link">Aller au contenu</a>
@@ -26,7 +36,7 @@
       </div>
       <div
         id="map"
-        role="img"
+        role="region"
         aria-label="Carte 3D du parcours en forêt autour de {{commune}}"
         style="position: absolute; inset: 0; width: 100%; height: 100%"
       ></div>
@@ -117,6 +127,7 @@
             <p class="tv course__kicker">Le parcours</p>
             <h2 id="parcours-title" class="tv course__title">Suivez le maillot jaune</h2>
             <p class="course__hint">Faites défiler : une boucle complète, du camp de base au camp de base.</p>
+            <ul class="course__list" data-course-list hidden></ul>
           </div>
 
           <!-- HUD TV : décoratif (aria-hidden), infos dupliquées dans le résumé texte ci-dessous -->

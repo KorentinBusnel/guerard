@@ -4,7 +4,7 @@
    (`summary { display: list-item }`) réafficherait le bouton (i) de l'attribution par-dessus
    le crédit OSM. Les utilitaires restent au-dessus de tout. */
 @layer theme, base, vendor, components, utilities;
-@import "maplibre-gl/dist/maplibre-gl.css" layer(vendor);
+/* maplibre-gl.css arrive avec le chunk carte (src/map/vendor.css), dans ce même layer. */
 @import "tailwindcss";
 
 @theme {
@@ -315,11 +315,38 @@
     position: relative;
     background: var(--sapin);
   }
+  /* Sections après le parcours : rendues seulement à l'approche (elles n'influent pas sur
+     les positions des déclencheurs de défilement, toutes situées au-dessus). */
+  #profil,
+  #compteur,
+  #infos,
+  #inscription,
+  #faq,
+  .site-footer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+  }
+
+  /* Mode capture (images OG / fallback) : la carte, sans l'interface de la page */
+  .capture .hero__copy,
+  .capture .hero__scroll,
+  .capture #dev-badges,
+  .capture main,
+  .capture footer {
+    display: none;
+  }
+  .capture-fallback .tv-banner,
+  .capture-fallback .map-scrim,
+  .capture-og .map-scrim {
+    display: none;
+  }
 
   /* ---------- Section parcours ---------- */
   .course {
     position: relative;
     height: 520vh;
+    /* hauteur fixée : rendu différé sans effet sur les positions de défilement */
+    content-visibility: auto;
   }
   @media (max-width: 640px) {
     .course {
@@ -474,7 +501,7 @@
     gap: 0.6rem;
     padding: 0.55rem 1rem 0.55rem 0.75rem;
     background: var(--flamme);
-    color: var(--brume);
+    color: #fff;
     font-size: 1.5rem;
     font-weight: 900;
     box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
@@ -696,6 +723,7 @@
   }
   .km-panel--flamme .km-panel__text {
     background: var(--flamme);
+    color: #fff;
     border-bottom-color: var(--brume);
   }
   .km-panel__flag {
@@ -790,7 +818,8 @@
     color: var(--brume);
   }
   .stat-card__value span {
-    font-size: 0.42em;
+    /* ≥ 18,7 px en gras : texte « large » au sens WCAG (fougère sur sous-bois = 4,4:1) */
+    font-size: 0.5em;
     letter-spacing: 0.06em;
     color: var(--fougere);
   }
@@ -1217,22 +1246,69 @@
     color: #e8a39f;
   }
 
-  /* Mouvement réduit : la section parcours devient une vue statique */
-  html.reduced-motion .course {
+  /* Parcours statique (mouvement réduit ou pas de WebGL) */
+  html.static-course .course {
     height: auto;
   }
-  html.reduced-motion .course__stage {
+  html.static-course .course__stage {
     position: relative;
-    height: 100dvh;
+    height: auto;
+    min-height: 100dvh;
+    padding-bottom: 9rem;
   }
-  html.reduced-motion .course__intro {
-    top: 6.5rem;
+  html.static-course .course__intro {
+    position: relative;
+    top: auto;
+    left: auto;
     transform: none;
+    margin: 6.5rem 1rem 0;
+    max-width: 34rem;
   }
-  html.reduced-motion .puck,
-  html.reduced-motion .stage-card,
-  html.reduced-motion .flamme-alert,
-  html.reduced-motion .yard-flip {
+  @media (min-width: 640px) {
+    html.static-course .course__intro {
+      margin-left: clamp(1rem, 5vw, 5rem);
+    }
+  }
+  html.static-course .course__hint {
+    display: none;
+  }
+  html.static-course .hud,
+  html.static-course .mini-profile__cursor,
+  html.static-course .puck,
+  html.static-course .stage-card,
+  html.static-course .flamme-alert,
+  html.static-course .yard-flip {
+    display: none;
+  }
+  .course__list {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: color-mix(in oklab, var(--brume) 85%, transparent);
+  }
+  .course__list .tv {
+    font-size: 1.05rem;
+    color: var(--brume);
+  }
+
+  /* Sans WebGL : image statique de la carte (générée au build) sous l'affiche */
+  .map-poster__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (max-aspect-ratio: 1/1) {
+    /* écran portrait : la boucle entière plutôt qu'un recadrage */
+    .map-poster__img {
+      object-fit: contain;
+      object-position: center 12%;
+    }
+  }
+  .map-poster.has-image svg {
     display: none;
   }
 

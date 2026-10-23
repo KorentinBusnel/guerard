@@ -15,7 +15,7 @@ const LEAD_IN = 0.04;
 const RUN_END = 0.9;
 const YARD_AT = 0.95;
 
-export function initScenes({ reducedMotion }: { reducedMotion: boolean }) {
+export function initScenes({ staticCourse }: { staticCourse: boolean }) {
   // Scène = qui occupe l'écran. Hero et parcours sont transparents (carte visible) ;
   // la carte doit déjà suivre le coureur quand le parcours entre par le bas de l'écran.
   let hero: ScrollTrigger | undefined;
@@ -28,8 +28,8 @@ export function initScenes({ reducedMotion }: { reducedMotion: boolean }) {
   course = ScrollTrigger.create({ trigger: "#parcours", start: "top bottom", end: "bottom top", onToggle: updateScene, onRefresh: updateScene });
   updateScene();
 
-  if (reducedMotion) {
-    // Pas de course pilotée au défilement : boucle entière affichée, HUD au départ.
+  if (staticCourse) {
+    // Pas de course pilotée au défilement : boucle entière affichée.
     setState({ courseD: 0 });
     return;
   }

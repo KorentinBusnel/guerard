@@ -14,7 +14,10 @@ function contentTemplate(): Plugin {
   return {
     name: "guerard-content",
     transformIndexHtml(html) {
-      const strings = viewStrings();
+      // URL publique du site (SITE_URL au build) : og:image doit être absolue pour la
+      // plupart des aperçus de liens.
+      const site = (process.env.SITE_URL ?? "").replace(/\/$/, "");
+      const strings: Record<string, string> = { ...viewStrings(), ogImage: `${site}/img/og.jpg`, siteUrl: `${site}/` };
       const blocks = viewHtml();
       return html
         .replace(/\{\{svg:route\}\}/g, routeSvgPath())

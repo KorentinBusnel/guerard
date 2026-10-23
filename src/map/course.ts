@@ -80,8 +80,11 @@ export function initCourseMap(fm: ForestMap, camera: HeliCamera, opts: CourseOpt
     if (course) {
       if (opts.reducedMotion) {
         // Pas de caméra qui suit : la boucle entière, figée.
+        // la carte d'intro occupe la gauche (desktop) ou le haut (mobile)
         camera.overview(
-          opts.mobile ? { top: 120, bottom: 160, left: 30, right: 30 } : { top: 120, bottom: 200, left: 120, right: 120 },
+          opts.mobile
+            ? { top: Math.round(vh() * 0.5), bottom: 130, left: 24, right: 24 }
+            : { top: 120, bottom: 190, left: Math.round(window.innerWidth * 0.46), right: 80 },
           opts.mobile ? 35 : 50,
         );
       } else {

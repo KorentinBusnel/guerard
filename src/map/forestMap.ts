@@ -16,8 +16,9 @@ import { forestTheme, HILLSHADE, ROAD_SHIELD_LAYERS, sdkCompatibleTheme, TERRAIN
 import { palette } from "../styles/tokens";
 import { route } from "../data/route";
 
-// NB : maplibre-gl.css est importé dans app.css, dans le layer `vendor`. Ne pas le
-// réimporter ici : une copie hors layer battrait les utilitaires Tailwind.
+// CSS MapLibre dans le layer `vendor` (vendor.css). Ne jamais importer
+// maplibre-gl.css directement : une copie hors layer battrait les utilitaires Tailwind.
+import "./vendor.css";
 
 /** Le SDK nomme ainsi la couche d'ombrage qu'il ajoute (repli DEV uniquement). */
 const SDK_HILLSHADE_LAYER = "mapmap-hillshade";

@@ -9,6 +9,7 @@ import { profileAt } from "../lib/routeMath";
 import { subscribe } from "../state";
 import { palette } from "../styles/tokens";
 import { profilePaths } from "./profileSvg";
+import { escapeHtml } from "../lib/html";
 
 interface StageItem {
   from: number;
@@ -71,7 +72,7 @@ export function courseSummary(): string {
   );
 }
 
-export function initCourse() {
+export function initCourse({ staticCourse }: { staticCourse: boolean }) {
   const root = document.getElementById("parcours")!;
   const $ = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T & Element>(sel)!;
   const hud = {
@@ -101,6 +102,17 @@ export function initCourse() {
   const clip = svg.querySelector("[data-mini-clip]")!;
 
   const items = stageItems();
+
+  if (staticCourse) {
+    // Vue statique : profil entièrement « parcouru », fiches étape listées en clair.
+    clip.setAttribute("width", "1000");
+    const list = $("[data-course-list]");
+    list.innerHTML = items
+      .map((it) => `<li><span class="tv">${escapeHtml(`${it.kicker} · ${it.title}`)}</span><br>${escapeHtml(it.stats)}</li>`)
+      .join("");
+    list.hidden = false;
+    return;
+  }
   let activeItem: StageItem | undefined;
   let lastFlamme = false;
   let lastYard = false;
