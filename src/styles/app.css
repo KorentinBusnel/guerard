@@ -1,0 +1,58 @@
+/* Ordre des cascade layers. maplibre-gl.css va dans `vendor` : hors layer, il battrait les
+   utilitaires Tailwind et ferait s'effondrer le conteneur de carte à 0 px (docs MapMap,
+   troubleshooting). `vendor` se place APRÈS `base` : tout en bas, le preflight Tailwind
+   (`summary { display: list-item }`) réafficherait le bouton (i) de l'attribution par-dessus
+   le crédit OSM. Les utilitaires restent au-dessus de tout. */
+@layer theme, base, vendor, components, utilities;
+@import "maplibre-gl/dist/maplibre-gl.css" layer(vendor);
+@import "tailwindcss";
+
+@theme {
+  /* Palette (miroir de src/styles/tokens.ts) */
+  --color-sapin: #14281d;
+  --color-sous-bois: #1f3a2b;
+  --color-mousse: #4f6b3a;
+  --color-fougere: #8ba35a;
+  --color-ecorce: #5a4632;
+  --color-brume: #edeae0;
+  --color-maillot: #f2c230;
+  --color-flamme: #c8302b;
+
+  --font-tv: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+}
+
+:root {
+  /* Tokens du brief, sous leur nom d'origine */
+  --sapin: var(--color-sapin);
+  --sous-bois: var(--color-sous-bois);
+  --mousse: var(--color-mousse);
+  --fougere: var(--color-fougere);
+  --ecorce: var(--color-ecorce);
+  --brume: var(--color-brume);
+  --maillot: var(--color-maillot);
+  --flamme: var(--color-flamme);
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--sapin);
+    color: var(--brume);
+    font-family: var(--font-sans);
+    margin: 0;
+  }
+}
+
+@layer components {
+  /* Incrustation TV : bloc noir/jaune, condensé, chiffres tabulaires */
+  .tv {
+    font-family: var(--font-tv);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+}
