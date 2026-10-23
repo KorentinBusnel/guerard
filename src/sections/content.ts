@@ -2,7 +2,7 @@
  * Sections de contenu : horloge-boucle du principe, compteur de yards.
  */
 import { route } from "../data/route";
-import { milestones, yardsFor } from "../content/blocks";
+import { milestones, yardsFor } from "../content/milestones";
 import { km, num } from "../lib/format";
 
 /** Une boucle = un tour d'horloge (6 s), en pause hors écran. */

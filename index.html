@@ -205,6 +205,75 @@
         </div>
       </section>
 
+      <section id="peloton" class="section-opaque" aria-labelledby="peloton-title">
+        <div class="wrap">
+          <p class="tv kicker">Le peloton</p>
+          <h2 id="peloton-title" class="tv h2">Qui ira le plus loin&nbsp;?</h2>
+          <p class="peloton__lede">
+            À l'inscription, chacun annonce son objectif en yards. Voici le classement prévisionnel, avant que la forêt ne
+            tranche.
+          </p>
+          {{html:pelotonMock}}
+          <ul class="peloton-stats">{{html:pelotonStats}}</ul>
+
+          <div class="peloton-grid">
+            <figure class="survival">
+              <figcaption class="tv survival__title">Le peloton s'égrène</figcaption>
+              <div class="survival__chart">{{html:pelotonSurvival}}</div>
+              <label class="survival__label" for="survival-yard">Yard</label>
+              <input id="survival-yard" class="yards__range" type="range" min="1" max="{{pelotonYardMax}}" step="1" value="{{pelotonYardDefault}}" />
+              <p class="survival__readout" data-survival-readout aria-live="polite"></p>
+            </figure>
+
+            <div class="standings">
+              <div class="standings__head">
+                <p class="tv standings__title">Classement prévisionnel</p>
+                <label class="sr-only" for="standings-search">Chercher un coureur ou un dossard</label>
+                <input id="standings-search" class="standings__search" type="search" placeholder="Nom ou dossard" autocomplete="off" />
+              </div>
+              <div class="standings__scroll">
+                <table class="standings__table">
+                  <caption class="sr-only">Inscrits classés par objectif annoncé, en yards</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Rang</th>
+                      <th scope="col">Coureur</th>
+                      <th scope="col">Objectif</th>
+                      <th scope="col" class="standings__dist">Distance</th>
+                      <th scope="col"><span class="sr-only">Palier</span></th>
+                    </tr>
+                  </thead>
+                  <tbody data-standings>{{html:pelotonStandings}}</tbody>
+                </table>
+              </div>
+              <button type="button" class="standings__more" data-standings-more hidden>Tout le peloton ({{pelotonCount}})</button>
+            </div>
+          </div>
+
+          <form class="prono" data-prono>
+            <p class="tv prono__title">Ton prono</p>
+            <p class="prono__lede">Qui sera le dernier debout, et après combien de yards&nbsp;?</p>
+            <div class="prono__fields">
+              <label class="prono__field">
+                <span>Dernier debout</span>
+                <select name="bib" required>{{html:pelotonOptions}}</select>
+              </label>
+              <label class="prono__field prono__field--yards">
+                <span>Yards</span>
+                <input name="yards" type="number" min="1" max="200" step="1" value="{{pelotonPronoDefault}}" required />
+              </label>
+              <button type="submit" class="cta tv prono__submit">Valider</button>
+            </div>
+            <p class="prono__shared" data-prono-shared hidden></p>
+            <div class="prono__result" data-prono-result aria-live="polite" hidden>
+              <p data-prono-text></p>
+              <button type="button" class="prono__share tv" data-prono-share>Partager mon prono</button>
+              <span class="prono__copied" data-prono-copied hidden>Lien copié</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
       <section id="infos" class="section-opaque" aria-labelledby="infos-title">
         <div class="wrap">
           <p class="tv kicker">Infos pratiques</p>

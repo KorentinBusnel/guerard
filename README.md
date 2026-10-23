@@ -25,6 +25,7 @@ En production, une clé navigateur est obligatoire (sinon tuiles 403).
 | Script | Rôle |
 |---|---|
 | `npm run prepare:route` | `data/boucle.gpx` (ou la boucle MOCK) → `src/data/route.json` : distances, altitude, pente lissée, D+, cap caméra lissé (150 m), montées, panneaux km, flamme rouge, POI. |
+| `npm run prepare:inscrits` | `data/inscrits.csv` (ou `.json`) → `src/data/inscrits.json` pour la section « Le peloton ». Sans fichier : liste **MOCK** fictive (badge rouge). |
 | `npm run create:style` | Publie le thème forêt comme style hébergé MapMap (`POST /styles`, puis versions suivantes) et écrit l'URL dans `.env.local`. Clé serveur requise. |
 | `npm run capture:images` | Après `npm run build` : capture `public/img/og.jpg` et `public/img/carte-fallback.webp` depuis la page (`?capture=og|fallback`). Navigateur : `CHROME_PATH`, sinon Chrome installé. |
 | `npm run static:map` | Même images via l'API Static Map de MapMap (`style=outdoor`, tracé en polyline **précision 6**). **À ce jour, le rendu Static Map ne couvre pas la France** (fond vide, relief seul) : d'où `capture:images` en attendant. |
@@ -55,10 +56,31 @@ canonique. Le rendu de référence reste le style hébergé. Le thème vit dans
 | `src/content/event.ts` | Nom, date, heure, tarif, lien, dossards, camp de base, ravito, accès, règlement, matériel, organisateur, FAQ. `null` = placeholder `[… À CONFIRMER]`. |
 | `data/boucle.gpx` | **À fournir.** Absent → `data/boucle.mock.gpx` (boucle **MOCK** fictive, badge rouge à l'écran, note en pied de page). |
 | `data/poi.json` | **À fournir.** Format : `data/poi.example.json`. |
+| `data/inscrits.csv` | **À fournir** (export de la plateforme d'inscription, `,` ou `;`). Colonnes : `dossard`, `nom` (ou `prenom` + `nom_famille`), `club` (facultatif), `objectif` (yards, facultatif). Format : `data/inscrits.example.csv`. Absent → liste MOCK. |
 | `public/img/` | Logo, photos : à fournir (AVIF/WebP). |
 
 Les textes sont écrits dans `index.html` **au build** (gabarit `{{clé}}` / `{{html:bloc}}`,
 cf. `vite.config.ts`, `src/content/view.ts`, `src/content/blocks.ts`) : lisibles sans JS.
+
+## Le peloton (gamification)
+
+Section `#peloton`, entre le compteur et les infos pratiques :
+
+- **Classement prévisionnel** : les inscrits classés par objectif annoncé (yards), ex æquo
+  partagés (« =5 »), maillot jaune virtuel pour l'objectif le plus haut, palier atteint
+  (semi, marathon, 100 km, 100 miles, calculés sur la boucle réelle), recherche par nom
+  ou dossard, top 10 puis « tout le peloton ».
+- **Le peloton s'égrène** : une barre par yard (combien d'inscrits visent au moins ce
+  yard), curseur qui lit le yard choisi et désigne le dernier debout prévisionnel.
+- **Ton prono** : le visiteur choisit son dernier debout et un nombre de yards ; la page
+  le situe (« plus optimiste que 96 % des objectifs annoncés », comparaison avec
+  l'objectif du coureur), le garde dans le navigateur et le partage par lien
+  (`?prono=<dossard>-<yards>#peloton`, Web Share ou copie). Aucun serveur : rien n'est
+  collecté.
+
+**Données personnelles** : par défaut, `prepare:inscrits` réduit les noms à « Prénom N. ».
+Publier la liste suppose le consentement des inscrits ; `INSCRITS_NOMS_COMPLETS=1` garde
+les noms tels quels.
 
 ## Architecture de la page
 

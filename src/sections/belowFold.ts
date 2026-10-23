@@ -4,4 +4,5 @@
  */
 export { initCourse } from "./course";
 export { initContent } from "./content";
+export { initPeloton } from "./peloton";
 export { initScenes } from "../scroll/scenes";

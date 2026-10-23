@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { routeSvgPath, viewStrings } from "./src/content/view.ts";
 import { viewHtml } from "./src/content/blocks.ts";
+import { pelotonHtml, pelotonStrings } from "./src/content/peloton.ts";
 import { escapeHtml } from "./src/lib/html.ts";
 
 /**
@@ -17,8 +18,13 @@ function contentTemplate(): Plugin {
       // URL publique du site (SITE_URL au build) : og:image doit être absolue pour la
       // plupart des aperçus de liens.
       const site = (process.env.SITE_URL ?? "").replace(/\/$/, "");
-      const strings: Record<string, string> = { ...viewStrings(), ogImage: `${site}/img/og.jpg`, siteUrl: `${site}/` };
-      const blocks = viewHtml();
+      const strings: Record<string, string> = {
+        ...viewStrings(),
+        ...pelotonStrings(),
+        ogImage: `${site}/img/og.jpg`,
+        siteUrl: `${site}/`,
+      };
+      const blocks = { ...viewHtml(), ...pelotonHtml() };
       return html
         .replace(/\{\{svg:route\}\}/g, routeSvgPath())
         .replace(/\{\{html:(\w+)\}\}/g, (match, key: string) => {

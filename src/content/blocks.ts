@@ -9,18 +9,9 @@ import { km, num } from "../lib/format.ts";
 import { escapeHtml } from "../lib/html.ts";
 import { gradeBins, palette } from "../styles/tokens.ts";
 import { profilePaths, profileScales, type ProfileBox } from "../sections/profileSvg.ts";
+import { milestones, yardsFor } from "./milestones.ts";
 
 const orTbc = (v: string | null, label: string) => v ?? tbc(label);
-
-/** Paliers de distance pour le compteur de yards. */
-export const milestones = [
-  { label: "Semi-marathon", km: 21.0975, than: "qu'un semi-marathon" },
-  { label: "Marathon", km: 42.195, than: "qu'un marathon" },
-  { label: "100 km", km: 100, than: "de 100 km" },
-  { label: "100 miles", km: 160.934, than: "de 100 miles" },
-] as const;
-
-export const yardsFor = (milestoneKm: number) => Math.ceil((milestoneKm * 1000) / route.totalM);
 
 function roadbook(): string {
   const W = 1200;

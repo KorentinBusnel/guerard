@@ -67,10 +67,11 @@ document.documentElement.classList.toggle("static-course", staticCourse);
 // HUD, profil, compteur et défilement ne servent qu'en dessous du hero : chunk séparé,
 // initialisé après le premier rendu.
 import("./sections/belowFold")
-  .then(({ initCourse, initContent, initScenes }) =>
+  .then(({ initCourse, initContent, initPeloton, initScenes }) =>
     idleSteps([
       () => initCourse({ staticCourse }),
       () => initContent({ reducedMotion }),
+      () => initPeloton(),
       () => initScenes({ staticCourse }),
     ]),
   )
