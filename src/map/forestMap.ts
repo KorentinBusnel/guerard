@@ -4,29 +4,42 @@
  * Deux modes de style :
  * - `VITE_MAPMAP_STYLE_URL` défini → style hébergé (compilateur canonique : il porte
  *   déjà son ombrage de relief, le SDK ne gère que le maillage 3D) ;
- * - sinon, repli DEV : le thème passe par le compilateur réduit du SDK, qui ignore le
+ * - sinon, repli DEV : le thème passe par le compilateur réduit du SDK, qui refuse le
  *   bloc `terrain` ; on demande alors le relief + ombrage au SDK et on recolore
  *   l'ombrage comme le ferait le compilateur canonique.
  */
 import * as maplibregl from "maplibre-gl";
 import { createMap, type MapMapMap, type Theme } from "@mapmap/maps";
+import type { ExpressionSpecification } from "maplibre-gl";
 import type { FeatureCollection, LineString, Point } from "geojson";
 import { forestTheme, HILLSHADE, ROAD_SHIELD_LAYERS, sdkCompatibleTheme, TERRAIN_EXAGGERATION } from "./theme";
 import { palette } from "../styles/tokens";
-import { route, routeBounds } from "../data/route";
+import { route } from "../data/route";
 
 // NB : maplibre-gl.css est importé dans app.css, dans le layer `vendor`. Ne pas le
 // réimporter ici : une copie hors layer battrait les utilitaires Tailwind.
 
 /** Le SDK nomme ainsi la couche d'ombrage qu'il ajoute (repli DEV uniquement). */
 const SDK_HILLSHADE_LAYER = "mapmap-hillshade";
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
 
 export type StyleMode = "hosted" | "sdk-dev";
+
+/** État d'affichage de la boucle. Progressions en fraction de la boucle (0–1). */
+export interface TrackState {
+  /** Jusqu'où le tracé est dessiné (liseré sombre compris). */
+  drawn: number;
+  /** Jusqu'où le tracé est « parcouru » (jaune maillot). */
+  travelled: number;
+  /** Afficher le reste de la boucle en pointillé fougère. */
+  remaining: boolean;
+}
 
 export interface ForestMap {
   mm: MapMapMap;
   map: maplibregl.Map;
   styleMode: StyleMode;
+  setTrack(state: TrackState): void;
 }
 
 export interface ForestMapOptions {
@@ -35,7 +48,7 @@ export interface ForestMapOptions {
 }
 
 /** Mélange deux couleurs hex (`t` = part de `to`). */
-function mix(from: string, to: string, t: number): string {
+export function mix(from: string, to: string, t: number): string {
   const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const a = rgb(from);
   const b = rgb(to);
@@ -76,6 +89,14 @@ function hideRoadShields(map: maplibregl.Map) {
   for (const id of ROAD_SHIELD_LAYERS) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
 }
 
+/** Dégradé « coupé » à `p` le long de la ligne (source en `lineMetrics`). */
+function cutAt(p: number, color: string): ExpressionSpecification {
+  return ["step", ["line-progress"], color, Math.min(Math.max(p, 0), 1.0001), TRANSPARENT];
+}
+
+const lineWidth = (base: number) =>
+  ["interpolate", ["exponential", 1.6], ["zoom"], 12, base * 0.6, 15, base * 1.4, 17, base * 3] as unknown as number;
+
 function addRoute(mm: MapMapMap) {
   const line: FeatureCollection<LineString> = {
     type: "FeatureCollection",
@@ -85,28 +106,42 @@ function addRoute(mm: MapMapMap) {
     type: "FeatureCollection",
     features: [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: route.coords[0] } }],
   };
-  // lineMetrics : prépare le dessin progressif (line-gradient sur line-progress, phase 1)
+  // lineMetrics : indispensable à line-gradient / line-progress (dessin progressif)
   mm.addPersistentSource("route", { type: "geojson", data: line, lineMetrics: true });
   mm.addPersistentSource("route-start", { type: "geojson", data: start });
-  const width = (base: number) =>
-    ["interpolate", ["exponential", 1.6], ["zoom"], 12, base * 0.6, 15, base * 1.4, 17, base * 3] as unknown as number;
+  const round = { "line-join": "round", "line-cap": "round" } as const;
   mm.addPersistentLayer(
     {
       id: "route-casing",
       type: "line",
       source: "route",
-      layout: { "line-join": "round", "line-cap": "round" },
-      paint: { "line-color": palette.sapin, "line-width": width(6), "line-opacity": 0.85 },
+      layout: round,
+      paint: { "line-gradient": cutAt(0, mix(palette.sapin, "#000000", 0.2)), "line-width": lineWidth(6), "line-opacity": 0.85 },
     },
     { slot: "top" },
   );
   mm.addPersistentLayer(
     {
-      id: "route-line",
+      id: "route-remaining",
       type: "line",
       source: "route",
-      layout: { "line-join": "round", "line-cap": "round" },
-      paint: { "line-color": palette.maillot, "line-width": width(3) },
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": palette.fougere,
+        "line-width": lineWidth(2.2),
+        "line-dasharray": [1.4, 1.6],
+        "line-opacity": 0,
+      },
+    },
+    { slot: "top" },
+  );
+  mm.addPersistentLayer(
+    {
+      id: "route-travelled",
+      type: "line",
+      source: "route",
+      layout: round,
+      paint: { "line-gradient": cutAt(0, palette.maillot), "line-width": lineWidth(3) },
     },
     { slot: "top" },
   );
@@ -116,11 +151,13 @@ function addRoute(mm: MapMapMap) {
       type: "circle",
       source: "route-start",
       paint: {
-        "circle-radius": width(4),
-        "circle-color": palette.maillot,
-        "circle-stroke-color": palette.sapin,
+        "circle-radius": lineWidth(3.6),
+        "circle-color": palette.sapin,
+        "circle-stroke-color": palette.brume,
         "circle-stroke-width": 2,
         "circle-pitch-alignment": "map",
+        "circle-opacity": 0,
+        "circle-stroke-opacity": 0,
       },
     },
     { slot: "top" },
@@ -141,19 +178,26 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
   }
 
   const exaggeration = mobile ? TERRAIN_EXAGGERATION.mobile : TERRAIN_EXAGGERATION.desktop;
-  const bounds = routeBounds();
+  const [lng0, lat0] = route.coords[0];
   const mm = createMap({
     container,
     apiKey: (import.meta.env.VITE_MAPMAP_KEY as string | undefined) || undefined,
     style: styleUrl || (sdkCompatibleTheme() as unknown as Theme),
-    center: [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2],
+    center: [lng0, lat0],
     zoom: 13.5,
     // Style hébergé : il porte déjà son ombrage → hillshade SDK off (sinon double ombrage).
     terrain: { exaggeration, hillshade: styleMode === "sdk-dev" },
     // Logo et attribution : non supprimables, dans deux coins différents.
     logo: { position: "bottom-right" },
     attributionPosition: "bottom-left",
-    mapOptions: { maxPitch: 75, pitch: mobile ? 40 : 58, bearing: -25 },
+    mapOptions: {
+      // Carte de fond pilotée par la page : pas de zoom molette ni de glisser qui
+      // détourneraient le défilement.
+      interactive: false,
+      maxPitch: 75,
+      pitch: mobile ? 40 : 60,
+      fadeDuration: 150,
+    },
   });
   const map = mm.map;
 
@@ -169,12 +213,18 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
   // whenReady peut arriver après le premier style.load : on réapplique, c'est idempotent
   onStyle();
 
-  map.fitBounds(bounds, {
-    padding: mobile ? { top: 90, bottom: 60, left: 24, right: 24 } : { top: 120, bottom: 80, left: 80, right: 80 },
-    pitch: mobile ? 40 : 58,
-    bearing: -25,
-    duration: 0,
-  });
+  let last = "";
+  const setTrack = ({ drawn, travelled, remaining }: TrackState) => {
+    const key = `${drawn.toFixed(5)}|${travelled.toFixed(5)}|${remaining}`;
+    if (key === last || !map.getLayer("route-travelled")) return;
+    last = key;
+    map.setPaintProperty("route-casing", "line-gradient", cutAt(drawn, mix(palette.sapin, "#000000", 0.2)));
+    map.setPaintProperty("route-travelled", "line-gradient", cutAt(travelled, palette.maillot));
+    map.setPaintProperty("route-remaining", "line-opacity", remaining ? 0.9 : 0);
+    const startVisible = drawn >= 1 ? 1 : 0;
+    map.setPaintProperty("route-start", "circle-opacity", startVisible);
+    map.setPaintProperty("route-start", "circle-stroke-opacity", startVisible);
+  };
 
-  return { mm, map, styleMode };
+  return { mm, map, styleMode, setTrack };
 }

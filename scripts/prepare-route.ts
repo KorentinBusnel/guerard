@@ -17,6 +17,7 @@ import path from "node:path";
 import { DOMParser } from "@xmldom/xmldom";
 import { gpx as gpxToGeoJSON } from "@tmcw/togeojson";
 import turfLength from "@turf/length";
+import turfBearing from "@turf/bearing";
 import { PNG } from "pngjs";
 import type { Feature, FeatureCollection, LineString, MultiLineString, Position } from "geojson";
 
@@ -34,6 +35,11 @@ const STEP_M = 10;
 /** Fenêtre de lissage de l'altitude, puis de la pente. */
 const ELE_SMOOTH_M = 40;
 const GRADE_WINDOW_M = 50;
+/** Fenêtre du cap de la caméra (moyenne glissante, brief : ~150 m). */
+const BEARING_WINDOW_M = 150;
+/** Détection des montées : pente moyenne et longueur minimales. */
+const CLIMB_MIN_GRADE = 4;
+const CLIMB_MIN_M = 150;
 const DEM_ZOOM = 13;
 const DEM_URL = "https://mapmap.ai/terrain/{z}/{x}/{y}.png";
 const API_BASE = process.env.MAPMAP_BASE_URL ?? "https://api.mapmap.ai";
@@ -338,6 +344,57 @@ async function main() {
   const hi = eleSmooth.reduce((best, e, i) => (e > eleSmooth[best] ? i : best), 0);
   const lo = eleSmooth.reduce((best, e, i) => (e < eleSmooth[best] ? i : best), 0);
 
+  // Cap de la caméra : moyenne circulaire (vecteurs unitaires pondérés par la longueur)
+  // des caps des segments sur ±75 m, pour une caméra sans à-coups dans les lacets.
+  const segBearing = coords.slice(1).map((c, i) => (turfBearing(coords[i], c) * Math.PI) / 180);
+  const bearing = sampleD.map((d) => {
+    let x = 0;
+    let y = 0;
+    const from = d - BEARING_WINDOW_M / 2;
+    const to = d + BEARING_WINDOW_M / 2;
+    const span = closed ? [[from, to]] : [[Math.max(0, from), Math.min(totalM, to)]];
+    // boucle fermée : la fenêtre déborde sur l'autre bout
+    const ranges = closed
+      ? span.flatMap(([a, b]) => (a < 0 ? [[a + totalM, totalM], [0, b]] : b > totalM ? [[a, totalM], [0, b - totalM]] : [[a, b]]))
+      : span;
+    for (const [a, b] of ranges) {
+      for (let i = 1; i < distM.length; i++) {
+        const overlap = Math.min(b, distM[i]) - Math.max(a, distM[i - 1]);
+        if (overlap <= 0) continue;
+        x += Math.sin(segBearing[i - 1]) * overlap;
+        y += Math.cos(segBearing[i - 1]) * overlap;
+      }
+    }
+    return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360;
+  });
+
+  // Montées : tronçons où la pente tient au-dessus du seuil (fiches étape, road-book)
+  const climbs: { startM: number; endM: number; lengthM: number; avgGrade: number; maxGrade: number; gainM: number }[] = [];
+  let runStart = -1;
+  const closeRun = (end: number) => {
+    const lengthM = sampleD[end] - sampleD[runStart];
+    const gainM = eleSmooth[end] - eleSmooth[runStart];
+    const avgGrade = (gainM / lengthM) * 100;
+    if (lengthM >= CLIMB_MIN_M && avgGrade >= CLIMB_MIN_GRADE) {
+      climbs.push({
+        startM: round(sampleD[runStart]),
+        endM: round(sampleD[end]),
+        lengthM: round(lengthM, 0),
+        avgGrade: round(avgGrade),
+        maxGrade: round(Math.max(...grade.slice(runStart, end + 1))),
+        gainM: round(gainM, 0),
+      });
+    }
+  };
+  grade.forEach((g, i) => {
+    if (g >= CLIMB_MIN_GRADE / 2 && runStart < 0) runStart = i;
+    else if (g < CLIMB_MIN_GRADE / 2 && runStart >= 0) {
+      closeRun(i - 1);
+      runStart = -1;
+    }
+  });
+  if (runStart >= 0) closeRun(grade.length - 1);
+
   // Panneaux kilométriques façon Tour : distance RESTANTE (« 5 KM », « 4 KM »…)
   const kmMarkers = [];
   for (let k = Math.floor(totalM / 1000); k >= 1; k--) {
@@ -379,7 +436,10 @@ async function main() {
       distM: sampleD.map((d) => round(d)),
       ele: eleSmooth.map((e) => round(e)),
       grade: grade.map((g) => round(g)),
+      /** Cap lissé de la caméra (degrés, 0 = nord). */
+      bearing: bearing.map((b) => round(b)),
     },
+    climbs,
     kmMarkers,
     flammeRouge,
     poi,
@@ -389,7 +449,7 @@ async function main() {
   fs.writeFileSync(OUT, JSON.stringify(out));
   const maxGrade = Math.max(...grade.map(Math.abs));
   console.log(
-    `✔ ${path.relative(ROOT, OUT)} : ${round(totalM)} m, D+ ${round(dPlus, 0)} m, alt ${round(eleSmooth[lo])}–${round(eleSmooth[hi])} m, pente max ${round(maxGrade)} %${mock ? " [MOCK]" : ""}`,
+    `✔ ${path.relative(ROOT, OUT)} : ${round(totalM)} m, D+ ${round(dPlus, 0)} m, alt ${round(eleSmooth[lo])}–${round(eleSmooth[hi])} m, pente max ${round(maxGrade)} %, ${climbs.length} montée(s)${mock ? " [MOCK]" : ""}`,
   );
 }
 

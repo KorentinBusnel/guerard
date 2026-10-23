@@ -19,7 +19,8 @@ export interface RouteData {
   highPoint: { distM: number; ele: number; coord: [number, number] };
   coords: [number, number][];
   distM: number[];
-  profile: { distM: number[]; ele: number[]; grade: number[] };
+  profile: { distM: number[]; ele: number[]; grade: number[]; bearing: number[] };
+  climbs: { startM: number; endM: number; lengthM: number; avgGrade: number; maxGrade: number; gainM: number }[];
   kmMarkers: { remainingKm: number; label: string; distM: number; coord: [number, number] }[];
   flammeRouge: { remainingKm: number; label: string; distM: number; coord: [number, number] } | null;
   poi: { id: string; type: string; name: string; description?: string; distM: number; lengthM?: number }[];

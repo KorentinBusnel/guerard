@@ -5,27 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#14281D" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>Backyard de Guérard</title>
-    <meta name="description" content="Backyard ultra à Guérard (77) : une boucle en forêt, un départ toutes les heures, jusqu'au dernier." />
+    <title>{{name}} — backyard ultra en forêt à {{commune}}</title>
+    <meta
+      name="description"
+      content="{{name}} : une boucle de {{loopKm3}} km en forêt, un départ toutes les heures, jusqu'au dernier coureur debout. {{place}}."
+    />
   </head>
   <body class="min-h-dvh">
-    <main>
-      <section aria-label="Carte du parcours" class="relative">
-        <!-- Position et hauteur en style inline : les utilitaires Tailwind (cascade layer)
-             perdraient contre .maplibregl-map { position: relative } → hauteur 0. -->
-        <div id="map" style="position: fixed; inset: 0; height: 100dvh; width: 100%"></div>
+    <a href="#principe" class="skip-link">Aller au contenu</a>
 
-        <div class="pointer-events-none fixed left-3 top-3 z-10 flex flex-col items-start gap-1.5 sm:left-5 sm:top-5">
-          <!-- Incrustation TV (décorative ; l'info clé est dupliquée en texte pour les lecteurs d'écran) -->
-          <div id="tv-banner" class="tv flex flex-wrap items-stretch text-[15px] shadow-lg sm:text-lg" aria-hidden="true">
-            <span class="bg-maillot px-2.5 py-1.5 text-sapin sm:px-3 sm:py-2" data-tv="name"></span>
-            <span class="bg-black/85 px-2.5 py-1.5 text-brume sm:px-3 sm:py-2" data-tv="stats"></span>
-          </div>
-          <p id="tv-banner-text" class="sr-only"></p>
-          <div id="dev-badges" class="tv flex flex-col items-start gap-1 text-xs sm:text-sm"></div>
+    <!-- Fond : la carte, fixe derrière les sections transparentes (hero, parcours).
+         Position et hauteur en style inline : les utilitaires Tailwind (cascade layer)
+         ne doivent pas pouvoir perdre contre .maplibregl-map → hauteur 0. -->
+    <div id="map-layer" style="position: fixed; inset: 0; height: 100dvh; z-index: 0">
+      <div id="map-poster" class="map-poster" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <path class="map-poster__casing" d="{{svg:route}}" />
+          <path class="map-poster__line" d="{{svg:route}}" pathLength="1" />
+        </svg>
+      </div>
+      <div
+        id="map"
+        role="img"
+        aria-label="Carte 3D du parcours en forêt autour de {{commune}}"
+        style="position: absolute; inset: 0; width: 100%; height: 100%"
+      ></div>
+      <!-- Voile de lisibilité : au-dessus du canevas, SOUS les coins de contrôle MapLibre
+           (z-index 2) pour ne jamais masquer l'attribution ni le logo. -->
+      <div class="map-scrim" aria-hidden="true"></div>
+    </div>
+
+    <header id="hero" class="hero relative z-10 min-h-dvh">
+      <div class="fixed-ui pointer-events-none absolute left-3 top-3 z-20 flex flex-col items-start gap-1.5 sm:left-5 sm:top-5">
+        <!-- Incrustation TV (décorative ; l'info est dupliquée en texte juste après) -->
+        <div class="tv tv-banner" aria-hidden="true">
+          <span class="tv-banner__name">{{name}}</span>
+          <span class="tv-banner__stats">{{loopKm1}} km · D+ {{dPlus}} m</span>
         </div>
+        <p class="sr-only">{{name}} : boucle de {{loopKm3}} km, {{dPlus}} m de dénivelé positif.</p>
+        <div id="dev-badges" class="tv flex flex-col items-start gap-1 text-xs sm:text-sm"></div>
+      </div>
+
+      <div class="hero__copy">
+        <p class="tv hero__kicker">L'étape qui ne finit jamais</p>
+        <h1 class="tv hero__title">{{name}}</h1>
+        <p class="hero__meta">
+          <span>{{date}}</span>
+          <span aria-hidden="true">·</span>
+          <span>{{place}}</span>
+        </p>
+        <div class="hero__actions">
+          <a class="cta tv" href="{{registrationHref}}">Prendre le départ</a>
+          <p class="tv hero__countdown" id="countdown">
+            <span class="hero__countdown-value" data-countdown>J-?</span>
+            <span class="sr-only" data-countdown-sr>Compte à rebours affiché dès que la date sera confirmée.</span>
+          </p>
+        </div>
+        <p class="hero__lede">
+          Une boucle de {{loopKm3}} km en forêt. Un départ toutes les heures. Le dernier debout gagne.
+        </p>
+      </div>
+
+      <a class="tv hero__scroll" href="#principe">
+        <span>Le principe</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+      </a>
+    </header>
+
+    <main id="principe" class="relative z-10 bg-sapin">
+      <section class="mx-auto max-w-5xl px-4 py-24 sm:px-8">
+        <p class="tv text-fougere">Suite en phase 2–3</p>
       </section>
     </main>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

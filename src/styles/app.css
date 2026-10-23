@@ -36,6 +36,14 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
   html,
   body {
     background: var(--sapin);
@@ -54,5 +62,257 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
     line-height: 1;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 50;
+    background: var(--maillot);
+    color: var(--sapin);
+    padding: 0.5rem 0.75rem;
+    font-weight: 700;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  .tv-banner {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 15px;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  }
+  .tv-banner > span {
+    padding: 0.42rem 0.65rem;
+  }
+  .tv-banner__name {
+    background: var(--maillot);
+    color: var(--sapin);
+  }
+  .tv-banner__stats {
+    background: rgb(0 0 0 / 0.85);
+    color: var(--brume);
+  }
+  @media (min-width: 640px) {
+    .tv-banner {
+      font-size: 18px;
+    }
+    .tv-banner > span {
+      padding: 0.5rem 0.8rem;
+    }
+  }
+
+  /* Affiche affichée avant la carte (et à la place de la carte sans WebGL) */
+  .map-poster {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 90% at 70% 40%, color-mix(in oklab, var(--sous-bois) 85%, var(--brume) 6%) 0%, var(--sapin) 70%),
+      var(--sapin);
+    transition: opacity 900ms ease;
+  }
+  .map-poster svg {
+    position: absolute;
+    inset: 8% 4% 8% 46%;
+    width: 50%;
+    height: 84%;
+    overflow: visible;
+  }
+  @media (max-width: 640px) {
+    .map-poster svg {
+      inset: 9% 6% 44% 6%;
+      width: 88%;
+      height: 47%;
+    }
+  }
+  /* Épaisseurs en unités du viewBox (100) : `non-scaling-stroke` casserait le tiret animé */
+  .map-poster path {
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .map-poster__casing {
+    stroke: rgb(0 0 0 / 0.45);
+    stroke-width: 1.1;
+  }
+  .map-poster__line {
+    stroke: var(--maillot);
+    stroke-width: 0.5;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: poster-draw 3.2s 0.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  }
+  @keyframes poster-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .map-ready .map-poster {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Voile de lisibilité du hero (dans #map-layer, entre canevas et contrôles) */
+  .map-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(0deg, var(--sapin) 0%, rgb(20 40 29 / 0.92) 34%, rgb(20 40 29 / 0) 62%);
+    transition: opacity 600ms ease;
+  }
+  @media (min-width: 768px) {
+    .map-scrim {
+      background:
+        linear-gradient(90deg, var(--sapin) 0%, var(--sapin) 24%, rgb(20 40 29 / 0.88) 38%, rgb(20 40 29 / 0) 60%),
+        linear-gradient(0deg, rgb(20 40 29 / 0.5) 0%, rgb(20 40 29 / 0) 22%);
+    }
+  }
+
+  /* Hero : transparent aux clics, sauf ses liens (l'attribution dessous reste cliquable) */
+  .hero {
+    pointer-events: none;
+  }
+  .hero a,
+  .hero button {
+    pointer-events: auto;
+  }
+  .hero__copy {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 5.25rem;
+    max-width: 38rem;
+  }
+  @media (min-width: 768px) {
+    .hero__copy {
+      left: clamp(1.5rem, 5vw, 5rem);
+      right: auto;
+      bottom: auto;
+      top: 50%;
+      transform: translateY(-46%);
+      width: min(40vw, 38rem);
+    }
+  }
+  .hero__kicker {
+    color: var(--fougere);
+    font-size: 1rem;
+    letter-spacing: 0.14em;
+    margin-bottom: 0.75rem;
+  }
+  .hero__title {
+    font-weight: 900;
+    font-size: clamp(3.4rem, 15vw, 5.2rem);
+    line-height: 0.86;
+    letter-spacing: -0.005em;
+    color: var(--brume);
+    text-wrap: balance;
+  }
+  @media (min-width: 768px) {
+    .hero__title {
+      font-size: clamp(4.5rem, 7.6vw, 8.5rem);
+    }
+  }
+  .hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin-top: 1rem;
+    color: color-mix(in oklab, var(--brume) 82%, transparent);
+    font-size: 0.95rem;
+  }
+  .hero__actions {
+    display: flex;
+    align-items: stretch;
+    gap: 0.6rem;
+    margin-top: 1.4rem;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--maillot);
+    color: var(--sapin);
+    font-weight: 900;
+    font-size: 1.3rem;
+    padding: 0.85rem 1.25rem;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease;
+  }
+  .cta::after {
+    content: "";
+    width: 0.55em;
+    height: 0.55em;
+    border-top: 0.16em solid currentColor;
+    border-right: 0.16em solid currentColor;
+    transform: rotate(45deg);
+  }
+  .cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgb(0 0 0 / 0.45);
+  }
+  .cta:focus-visible,
+  .hero__scroll:focus-visible {
+    outline: 3px solid var(--brume);
+    outline-offset: 3px;
+  }
+  .hero__countdown {
+    display: flex;
+    align-items: center;
+    background: rgb(0 0 0 / 0.85);
+    color: var(--brume);
+    padding: 0 0.9rem;
+    font-size: 1.3rem;
+    font-weight: 900;
+  }
+  .hero__lede {
+    margin-top: 1.25rem;
+    max-width: 30rem;
+    color: color-mix(in oklab, var(--brume) 78%, transparent);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .hero__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: 1.6rem;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    color: var(--fougere);
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+  }
+  .hero__scroll svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    animation: nudge 1.8s ease-in-out infinite;
+  }
+  @keyframes nudge {
+    50% {
+      transform: translateY(4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .map-poster__line {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+    .hero__scroll svg {
+      animation: none;
+    }
+    .cta {
+      transition: none;
+    }
   }
 }
