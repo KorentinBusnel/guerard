@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "mapmap-map-design": {
+      "source": "Mapmapai/mapmap-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mapmap-map-design/SKILL.md",
+      "computedHash": "eaa96ccb96d07b22bb9aad2ea52d4cd70bd12ffc5a00aed632664e6d5e4568a5"
+    },
+    "mapmap-mcp-setup": {
+      "source": "Mapmapai/mapmap-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mapmap-mcp-setup/SKILL.md",
+      "computedHash": "3d3742bcb7d23b51f611633e50321f31e32c1f6dc9b2d35552cc80e8551f7e77"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+# copiés depuis node_modules par scripts/copy-maplibre-worker.mjs
+public/vendor/maplibre/
+.DS_Store

@@ -1,0 +1,3 @@
+/* CSS MapLibre, chargé avec le chunk carte, dans le layer `vendor` déclaré par app.css
+   (entre `base` et `utilities` : cf. le commentaire en tête d'app.css). */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(vendor);
