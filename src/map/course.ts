@@ -84,7 +84,7 @@ export function initCourseMap(fm: ForestMap, camera: HeliCamera, opts: CourseOpt
         camera.overview(
           opts.mobile
             ? { top: Math.round(vh() * 0.5), bottom: 130, left: 24, right: 24 }
-            : { top: 120, bottom: 190, left: Math.round(window.innerWidth * 0.46), right: 80 },
+            : { top: 120, bottom: 190, left: Math.round(window.innerWidth * 0.46), right: 170 },
           opts.mobile ? 35 : 50,
         );
       } else {

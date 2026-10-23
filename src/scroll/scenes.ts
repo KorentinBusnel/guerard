@@ -27,6 +27,8 @@ export function initScenes({ staticCourse }: { staticCourse: boolean }) {
   hero = ScrollTrigger.create({ trigger: "#hero", start: "top bottom", end: "bottom top", onToggle: updateScene, onRefresh: updateScene });
   course = ScrollTrigger.create({ trigger: "#parcours", start: "top bottom", end: "bottom top", onToggle: updateScene, onRefresh: updateScene });
   updateScene();
+  // Les polices (swap) peuvent changer la hauteur des sections au-dessus du parcours.
+  void document.fonts?.ready.then(() => ScrollTrigger.refresh());
 
   if (staticCourse) {
     // Pas de course pilotée au défilement : boucle entière affichée.

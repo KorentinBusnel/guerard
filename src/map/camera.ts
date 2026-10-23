@@ -36,6 +36,15 @@ export class HeliCamera {
     document.addEventListener("visibilitychange", () => this.setPaused("hidden", document.hidden));
   }
 
+  /**
+   * `cameraForBounds` en partant d'un padding nul : sinon MapLibre ajoute au padding
+   * demandé celui déjà posé sur la carte (orbite, poursuite) et dézoome à tort.
+   */
+  private fit(bounds: [[number, number], [number, number]], padding: PaddingOptions) {
+    this.map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
+    return this.map.cameraForBounds(bounds, { padding, pitch: 0 });
+  }
+
   /** Cadrage de l'orbite : la boucle entière tient dans le cercle qui tourne. */
   orbitFrame(): { center: [number, number]; zoom: number; pitch: number; padding: PaddingOptions } {
     const [[w, s], [e, n]] = routeBounds();
@@ -48,12 +57,12 @@ export class HeliCamera {
     const padding: PaddingOptions = this.opts.mobile
       ? { top: 80, bottom: Math.round(vh * 0.42), left: 12, right: 12 }
       : { top: 70, bottom: 50, left: Math.round(vw * 0.44), right: 40 };
-    const cam = this.map.cameraForBounds(
+    const cam = this.fit(
       [
         [center[0] - r / kx, center[1] - r],
         [center[0] + r / kx, center[1] + r],
       ],
-      { padding, pitch: 0 },
+      padding,
     );
     // vue inclinée : la boucle est raccourcie en profondeur, on resserre le cadrage
     const pitch = this.opts.mobile ? 40 : 60;
@@ -85,7 +94,7 @@ export class HeliCamera {
   /** Vue figée sur la boucle entière. */
   overview(padding: PaddingOptions, pitch: number, bearing = -25) {
     this.setMode("still");
-    const cam = this.map.cameraForBounds(routeBounds(), { padding, pitch: 0 });
+    const cam = this.fit(routeBounds(), padding);
     this.map.jumpTo({ center: cam?.center, zoom: cam?.zoom, pitch, bearing, padding: { top: 0, bottom: 0, left: 0, right: 0 } });
   }
 

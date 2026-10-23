@@ -1249,6 +1249,8 @@
   /* Parcours statique (mouvement réduit ou pas de WebGL) */
   html.static-course .course {
     height: auto;
+    /* hauteur variable : pas de rendu différé, sinon 0 px hors écran fausserait les scènes */
+    content-visibility: visible;
   }
   html.static-course .course__stage {
     position: relative;
