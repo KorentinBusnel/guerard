@@ -1,11 +1,13 @@
 /**
  * La scène 3D en fond fixe des deux pages (chunk chargé après le premier affichage) : la
  * boucle en grand sur le relief, le coureur qui en fait le tour, encore et encore,
- * l'orbite lente. On la fait tourner en la glissant.
+ * l'orbite lente. On la fait tourner, on zoome, on lit le km et l'altitude du tracé
+ * (src/map/interact.ts).
  */
 import { createForestMap } from "./forestMap";
 import { HeliCamera } from "./camera";
 import { Runner } from "./runner";
+import { enableInteractions } from "./interact";
 
 export interface BootOptions {
   mobile: boolean;
@@ -16,50 +18,23 @@ export interface BootOptions {
   pages: HTMLElement[];
   /** État du bouton Pause au moment où la carte arrive. */
   userPaused: boolean;
+  /** Après chaque zoom : peut-on encore rapprocher / éloigner (boutons + / −) ? */
+  onZoomChange?: (canIn: boolean, canOut: boolean) => void;
 }
 
 export interface Scene {
   setUserPaused(paused: boolean): void;
   /** Bascule vue de dessus / vue 3D ; renvoie `true` si on est maintenant vu de dessus. */
   toggleTopDown(): boolean;
+  /** Boutons + / − : un cran de zoom. */
+  zoomBy(dz: number): void;
 }
 
 /** Durée du dessin de la boucle à son apparition (brief : ~4 s). */
 const DRAW_MS = 4000;
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
-/** Glisser sur la carte : tourner autour de la boucle (et l'incliner, à la souris). */
-function enableDragRotate(el: HTMLElement, camera: HeliCamera) {
-  let active: number | null = null;
-  let lastX = 0;
-  let lastY = 0;
-  el.addEventListener("pointerdown", (e) => {
-    if (active !== null || (e.pointerType === "mouse" && e.button !== 0)) return;
-    active = e.pointerId;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    el.setPointerCapture(e.pointerId);
-    el.classList.add("is-dragging");
-  });
-  el.addEventListener("pointermove", (e) => {
-    if (e.pointerId !== active) return;
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    // au doigt, le vertical reste au défilement de la page (touch-action: pan-y)
-    camera.rotateBy(-dx * 0.3, e.pointerType === "mouse" ? -dy * 0.2 : 0);
-  });
-  const end = (e: PointerEvent) => {
-    if (e.pointerId !== active) return;
-    active = null;
-    el.classList.remove("is-dragging");
-  };
-  el.addEventListener("pointerup", end);
-  el.addEventListener("pointercancel", end);
-}
-
-export async function bootMap({ mobile, reducedMotion, capture, pages, userPaused }: BootOptions): Promise<Scene> {
+export async function bootMap({ mobile, reducedMotion, capture, pages, userPaused, onZoomChange }: BootOptions): Promise<Scene> {
   const container = document.getElementById("map")!;
   const fm = await createForestMap({ container, mobile });
   const still = reducedMotion || !!capture;
@@ -86,7 +61,17 @@ export async function bootMap({ mobile, reducedMotion, capture, pages, userPause
       else runner.setPaused("drawing", false);
     };
     requestAnimationFrame(step);
-    enableDragRotate(container, camera);
+  }
+  const zoomChanged = () => onZoomChange?.(camera.canZoomIn, camera.canZoomOut);
+  // Les gestes restent permis en mouvement réduit : c'est l'utilisateur qui bouge la vue.
+  if (!capture) {
+    enableInteractions({
+      map: fm.map,
+      camera,
+      container,
+      relief: document.querySelector<HTMLElement>(".relief__plot"),
+      onZoom: zoomChanged,
+    });
   }
 
   // Tout s'arrête quand aucune des deux pages n'est à l'écran (pied de page) ou que
@@ -134,6 +119,10 @@ export async function bootMap({ mobile, reducedMotion, capture, pages, userPause
     toggleTopDown() {
       camera.setTopDown(!camera.topDown);
       return camera.topDown;
+    },
+    zoomBy(dz) {
+      camera.zoomBy(dz);
+      zoomChanged();
     },
   };
 }

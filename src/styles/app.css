@@ -292,6 +292,15 @@
     padding: 10px 14px;
     background: rgb(22 27 19 / 0.55);
   }
+  .btn-outline--square {
+    width: 44px;
+    padding: 0;
+    font-size: 18px;
+  }
+  .btn-outline--small:disabled:hover {
+    background: rgb(22 27 19 / 0.55);
+    color: var(--color-mint);
+  }
   #map {
     touch-action: pan-y;
     cursor: grab;
@@ -303,13 +312,58 @@
   /* Le coureur de la scène 3D (le style est sur l'enfant : MapLibre écrit l'opacité
      d'occultation sur l'élément racine du marqueur). */
   .runner-marker__dot {
+    position: relative;
     display: block;
     width: 14px;
     height: 14px;
     border: 2px solid var(--color-carbon);
     border-radius: 50%;
     background: var(--color-mint);
-    outline: 6px solid rgb(226 255 204 / 0.18);
+  }
+  /* onde qui part du coureur, en boucle */
+  .runner-marker__dot::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--color-mint);
+    border-radius: 50%;
+    animation: runner-pulse 1600ms ease-out infinite;
+  }
+  @keyframes runner-pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    to {
+      transform: scale(3.2);
+      opacity: 0;
+    }
+  }
+
+  /* Point repéré sur la boucle (survol / toucher, ou depuis le profil de la page 2) */
+  .probe {
+    position: relative;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+  }
+  .probe__dot {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--color-mint);
+    border-radius: 50%;
+    background: var(--color-carbon);
+  }
+  .probe__label {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    transform: translateX(-50%);
+    padding: 6px 8px;
+    border: 1px solid var(--color-mint);
+    background: var(--color-carbon);
+    color: var(--color-mint);
+    white-space: nowrap;
   }
 
   .countdown {
@@ -548,6 +602,46 @@
   .relief__plot {
     position: relative;
     height: clamp(200px, 32vh, 380px);
+    /* survoler le profil place le point sur la boucle 3D (src/map/interact.ts) */
+    pointer-events: auto;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+  .relief__cursor {
+    position: absolute;
+    left: var(--x);
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--color-mint);
+    pointer-events: none;
+  }
+  .relief__cursor[hidden] {
+    display: none;
+  }
+  .relief__cursor-dot {
+    position: absolute;
+    left: -6px;
+    top: var(--y);
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    border: 2px solid var(--color-mint);
+    border-radius: 50%;
+    background: var(--color-carbon);
+  }
+  .relief__cursor.is-flipped .relief__cursor-label {
+    left: auto;
+    right: 10px;
+  }
+  .relief__cursor-label {
+    position: absolute;
+    left: 10px;
+    top: calc(var(--y) - 34px);
+    padding: 6px 8px;
+    border: 1px solid var(--color-mint);
+    background: var(--color-carbon);
+    color: var(--color-mint);
+    white-space: nowrap;
   }
   .relief__svg {
     display: block;
@@ -749,7 +843,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .is-again .title-loop__letter {
+    .is-again .title-loop__letter,
+    .runner-marker__dot::after {
       animation: none;
     }
     .btn-outline,

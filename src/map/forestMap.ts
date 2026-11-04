@@ -33,6 +33,8 @@ export interface ForestMap {
   styleMode: StyleMode;
   /** Dessine la boucle jusqu'à la fraction `p` (0–1) de sa longueur. */
   setDrawn(p: number): void;
+  /** Traînée lumineuse derrière le coureur, en `p` (fraction du tour) ; `null` l'éteint. */
+  setTrail(p: number | null): void;
 }
 
 export interface ForestMapOptions {
@@ -56,11 +58,15 @@ export function mix(from: string, to: string, t: number): string {
 function tuneDevHillshade(map: maplibregl.Map) {
   if (!map.getLayer(SDK_HILLSHADE_LAYER)) return;
   const ground = forestTheme.palette.landcover;
-  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-shadow-color", mix(ground, "#000000", 0.5));
-  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-highlight-color", mix(ground, "#ffffff", 0.5));
+  // Deux lumières (nord-ouest rasante + ouest douce) : un modelé plus fin qu'une seule
+  // source, sans écraser les fonds de vallée.
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-method", "multidirectional");
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-direction", [HILLSHADE.direction, 255]);
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-altitude", [35, 55]);
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-highlight-color", [mix(ground, "#ffffff", 0.42), mix(ground, "#ffffff", 0.18)]);
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-shadow-color", [mix(ground, "#000000", 0.6), mix(ground, "#000000", 0.3)]);
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-accent-color", mix(ground, "#000000", 0.2));
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-exaggeration", HILLSHADE.intensity);
-  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-direction", HILLSHADE.direction);
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-anchor", "map");
 }
 
@@ -79,7 +85,7 @@ function applySky(map: maplibregl.Map) {
 }
 
 /** Nos couches (la boucle, le départ) : toujours visibles. */
-const OWN_LAYERS = new Set(["route-casing", "route-line", "route-start"]);
+const OWN_LAYERS = new Set(["route-glow", "route-casing", "route-line", "route-trail", "route-start"]);
 
 /**
  * Ce qu'on garde du fond de carte, sur le relief : la forêt, l'eau et les rivières, les
@@ -121,6 +127,44 @@ function cutAt(p: number, color: string): ExpressionSpecification {
   return ["step", ["line-progress"], color, Math.min(Math.max(p, 0), 1.0001), TRANSPARENT];
 }
 
+const MINT_RGB = "226, 255, 204";
+const mintA = (a: number) => `rgba(${MINT_RGB}, ${Math.round(Math.min(Math.max(a, 0), 1) * 1000) / 1000})`;
+/** Longueur de la traînée du coureur (fraction du tour). */
+const TRAIL = 0.07;
+
+/**
+ * Traînée lumineuse derrière le coureur, en `p` (fraction du tour) : opaque au coureur,
+ * transparente `TRAIL` plus loin. Elle passe la ligne de départ sans couture.
+ */
+function trailAt(p: number | null): ExpressionSpecification {
+  if (p === null) return ["step", ["line-progress"], TRANSPARENT, 0, TRANSPARENT];
+  const e = 0.0005;
+  const stops: [number, string][] =
+    p >= TRAIL
+      ? [
+          [0, TRANSPARENT],
+          [p - TRAIL, TRANSPARENT],
+          [p, mintA(1)],
+          [Math.min(p + e, 1), TRANSPARENT],
+          [1, TRANSPARENT],
+        ]
+      : [
+          [0, mintA(1 - p / TRAIL)],
+          [p, mintA(1)],
+          [p + e, TRANSPARENT],
+          [1 - (TRAIL - p), TRANSPARENT],
+          [1, mintA(1 - p / TRAIL)],
+        ];
+  const flat: (number | string)[] = [];
+  let last = -1;
+  for (const [x, c] of stops) {
+    if (x <= last) continue;
+    flat.push(x, c);
+    last = x;
+  }
+  return ["interpolate", ["linear"], ["line-progress"], ...flat] as unknown as ExpressionSpecification;
+}
+
 const lineWidth = (base: number) =>
   ["interpolate", ["exponential", 1.6], ["zoom"], 12, base * 0.6, 15, base * 1.4, 17, base * 3] as unknown as number;
 
@@ -137,6 +181,17 @@ function addRoute(mm: MapMapMap) {
   mm.addPersistentSource("route", { type: "geojson", data: line, lineMetrics: true });
   mm.addPersistentSource("route-start", { type: "geojson", data: start });
   const round = { "line-join": "round", "line-cap": "round" } as const;
+  // halo : la boucle se lit de loin, sur le relief comme sur la forêt
+  mm.addPersistentLayer(
+    {
+      id: "route-glow",
+      type: "line",
+      source: "route",
+      layout: round,
+      paint: { "line-gradient": cutAt(0, mintA(0.22)), "line-width": lineWidth(16), "line-blur": lineWidth(12) },
+    },
+    { slot: "top" },
+  );
   mm.addPersistentLayer(
     {
       id: "route-casing",
@@ -154,6 +209,16 @@ function addRoute(mm: MapMapMap) {
       source: "route",
       layout: round,
       paint: { "line-gradient": cutAt(0, palette.mint), "line-width": lineWidth(3.6) },
+    },
+    { slot: "top" },
+  );
+  mm.addPersistentLayer(
+    {
+      id: "route-trail",
+      type: "line",
+      source: "route",
+      layout: round,
+      paint: { "line-gradient": trailAt(null), "line-width": lineWidth(7), "line-blur": lineWidth(1.5) },
     },
     { slot: "top" },
   );
@@ -203,7 +268,12 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     logo: { position: "bottom-right" },
     attributionPosition: "bottom-left",
     mapOptions: {
-      // Carte de fond : pas de zoom molette ni de glisser qui détourneraient le défilement.
+      // Rendu net : anticrénelage (arêtes du relief, tracé) et densité de pixels au moins
+      // 1,5 (suréchantillonnage sur les écrans standard), plafonnée pour le GPU mobile.
+      canvasContextAttributes: { antialias: true },
+      pixelRatio: Math.min(Math.max(window.devicePixelRatio || 1, mobile ? 1 : 1.5), mobile ? 2.5 : 2),
+      // Gestes gérés par l'app (src/map/interact.ts) : la molette et le glisser vertical
+      // restent au défilement de la page.
       interactive: false,
       maxPitch: 75,
       pitch: mobile ? 52 : 60,
@@ -229,6 +299,7 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     const q = Math.round(Math.min(Math.max(p, 0), 1) * 10_000) / 10_000;
     if (q === last || !map.getLayer("route-line")) return;
     last = q;
+    map.setPaintProperty("route-glow", "line-gradient", cutAt(q, mintA(0.22)));
     map.setPaintProperty("route-casing", "line-gradient", cutAt(q, palette.black));
     map.setPaintProperty("route-line", "line-gradient", cutAt(q, palette.mint));
     const startVisible = q >= 1 ? 1 : 0;
@@ -236,5 +307,13 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     map.setPaintProperty("route-start", "circle-stroke-opacity", startVisible);
   };
 
-  return { mm, map, styleMode, setDrawn };
+  let lastTrail = -1;
+  const setTrail = (p: number | null) => {
+    const q = p === null ? -1 : Math.round(p * 4000) / 4000;
+    if (q === lastTrail || !map.getLayer("route-trail")) return;
+    lastTrail = q;
+    map.setPaintProperty("route-trail", "line-gradient", trailAt(p === null ? null : q));
+  };
+
+  return { mm, map, styleMode, setDrawn, setTrail };
 }

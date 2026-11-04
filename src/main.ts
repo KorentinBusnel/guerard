@@ -48,6 +48,11 @@ for (const btn of pauseBtns) {
     scene?.setUserPaused(userPaused);
   });
 }
+const zoomBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-zoom]")];
+const onZoomChange = (canIn: boolean, canOut: boolean) => {
+  for (const b of zoomBtns) b.disabled = b.dataset.zoom === "in" ? !canIn : !canOut;
+};
+for (const b of zoomBtns) b.addEventListener("click", () => scene?.zoomBy(b.dataset.zoom === "in" ? 0.6 : -0.6));
 viewBtn.addEventListener("click", () => {
   if (!scene) return;
   const topDown = scene.toggleTopDown();
@@ -83,11 +88,12 @@ if (!webgl) {
     started = true;
     for (const type of INTERACTIONS) window.removeEventListener(type, startMap);
     import("./map/boot")
-      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, pages, userPaused }))
+      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, pages, userPaused, onZoomChange }))
       .then((s) => {
         scene = s;
         viewBtn.hidden = false;
-        if (!reducedMotion) document.querySelector<HTMLElement>("[data-hint]")!.hidden = false;
+        for (const b of zoomBtns) b.hidden = false;
+        document.querySelector<HTMLElement>("[data-hint]")!.hidden = false;
         document.querySelector<HTMLElement>("[data-readout]")!.hidden = reducedMotion;
       })
       .catch((err) => {

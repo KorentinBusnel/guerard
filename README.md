@@ -111,9 +111,20 @@ carte :
 
 - Calque `#map-layer` fixe, sous les deux pages (transparentes) ; le pied de page,
   opaque, le recouvre.
-- **Boucle** : ligne menthe dessinée en 4 s à l'arrivée de la scène ; le coureur
-  (`src/map/runner.ts`, un tour en 26 s, position par `src/map/track.ts`) en fait le
-  tour, encore et encore.
+- **Boucle** : ligne menthe sur un halo flou, dessinée en 4 s à l'arrivée de la scène ;
+  le coureur (`src/map/runner.ts`, un tour en 26 s, position par `src/map/track.ts`) en
+  fait le tour, encore et encore, suivi d'une traînée lumineuse (`line-gradient`
+  recalculé à chaque image).
+- **Rendu HD** : anticrénelage du canevas (`canvasContextAttributes.antialias`),
+  densité de pixels au moins 1,5 sur ordinateur (suréchantillonnage des écrans
+  standard, plafonnée à 2 ; 2,5 sur mobile) ; ombrage du relief à deux lumières
+  (`hillshade-method: multidirectional`).
+- **Interactions** (`src/map/interact.ts`) : glisser pour tourner (et incliner à la
+  souris), avec inertie ; deux doigts pour zoomer et pivoter ; Ctrl / ⌘ + molette (ou
+  pincement du pavé tactile) pour zoomer, la molette seule faisant défiler la page ;
+  boutons − / + ; double-clic pour revenir au cadrage. Survoler (ou toucher) le tracé
+  affiche le kilomètre et l'altitude du point, repérés aussi sur le grand profil de la
+  page 2 ; survoler le profil place le point sur la boucle 3D.
 - **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, puis
   (grand écran) à gauche du formulaire de la page 2, au fil du défilement ; orbite
   lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste

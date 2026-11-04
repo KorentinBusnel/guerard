@@ -5,7 +5,7 @@
 import { event, tbc } from "./event.ts";
 import { escapeHtml } from "../lib/html.ts";
 import { palette } from "../styles/tokens.ts";
-import { profilePaths, profileSegmentArea, yPercent, type ProfileBox } from "../sections/profileSvg.ts";
+import { profilePaths, profileSegmentArea, RELIEF, yPercent } from "../sections/profileSvg.ts";
 import { route } from "../data/route.ts";
 import { km, num } from "../lib/format.ts";
 
@@ -25,8 +25,6 @@ function titleLetters(): string {
 }
 
 /** Le relief de la boucle, en grand au bas de la page 2 (cadre SVG étiré, étiquettes HTML). */
-const RELIEF: Required<ProfileBox> = { width: 1000, height: 300, padTop: 40 };
-
 function reliefProfile(): string {
   const { ridge, area } = profilePaths(RELIEF);
   const { totalM, profile } = route;

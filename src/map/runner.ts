@@ -27,7 +27,7 @@ export class Runner {
   private readonly pausedBy = new Set<string>();
 
   constructor(
-    fm: ForestMap,
+    private readonly fm: ForestMap,
     private readonly ui: RunnerUi,
   ) {
     // L'occultation par le relief écrit `style.opacity` sur l'élément racine du marqueur :
@@ -56,6 +56,7 @@ export class Runner {
   /** Pas de coureur (reduced motion, captures). */
   showStatic() {
     this.marker.remove();
+    this.fm.setTrail(null);
     if (this.ui.readout) this.ui.readout.hidden = true;
   }
 
@@ -72,6 +73,7 @@ export class Runner {
 
   private render(d: number) {
     this.marker.setLngLat(pointAt(d));
+    this.fm.setTrail(d / route.totalM);
     const ele = eleAt(d);
     const text = `Yard ${pad2(this.yard)} · km ${km(d, 2)} · ${Math.round(ele)} m`;
     if (this.ui.readout && text !== this.lastText) this.ui.readout.textContent = this.lastText = text;

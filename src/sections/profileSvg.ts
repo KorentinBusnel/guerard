@@ -10,6 +10,9 @@ export interface ProfileBox {
   padTop?: number;
 }
 
+/** Cadre du grand relief de la page 2 (viewBox 1000 × 300, étiré en CSS). */
+export const RELIEF: Required<ProfileBox> = { width: 1000, height: 300, padTop: 40 };
+
 /** Échelle verticale du profil : socle sous le point bas, petite marge au-dessus du haut. */
 function eleRange() {
   const { eleMin, eleMax } = route;
