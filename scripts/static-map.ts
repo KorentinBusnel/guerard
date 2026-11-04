@@ -54,7 +54,7 @@ async function render(file: string, params: Record<string, string>) {
     style: process.env.STATIC_MAP_STYLE ?? "outdoor",
     route: encodePolyline6(route.coords),
     precision: "6",
-    route_colour: palette.maillot,
+    route_colour: palette.mint,
     route_width: "6",
     pois: "false",
     ...params,

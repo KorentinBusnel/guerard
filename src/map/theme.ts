@@ -1,5 +1,5 @@
 /**
- * Thème MapMap « backyard-guerard-foret » : forêt de Brie à l'aube.
+ * Thème MapMap « again-and-again-topo » : la forêt de Guérard en papier topo de nuit.
  *
  * Source unique du style : `npm run create:style` le publie tel quel comme style
  * hébergé (compilateur canonique : relief, ombrage, fontes par type de label), et
@@ -14,28 +14,31 @@ export const TERRAIN_EXAGGERATION = { desktop: 1.6, mobile: 1.2 } as const;
 export const HILLSHADE = { intensity: 0.55, direction: 335 } as const;
 
 export const forestTheme = {
-  name: "backyard-guerard-foret",
+  name: "again-and-again-topo",
   base: "dark",
+  // Carte « papier topo de nuit » : la gamme de neutres du design, le tracé seul en menthe.
   palette: {
-    background: palette.sapin,
-    landcover: palette.sousBois,
-    park: "#2B4A33",
-    wood: "#2F5236",
-    grass: "#3A5A3A",
-    farmland: "#2A3A2A",
-    water: "#1E3A44",
-    path: "#8A7458",
-    road: "#3A4A3E",
-    roadMajor: "#4F5E50",
-    building: "#2C3A30",
-    textPrimary: palette.brume,
-    textSecondary: "#A8B39A",
-    textHalo: palette.sapin,
+    background: palette.carbon,
+    landcover: palette.carbon,
+    landuse: palette.carbon,
+    park: palette.charcoal,
+    wood: palette.charcoal,
+    grass: "#20261c",
+    farmland: "#1b2117",
+    water: palette.black,
+    waterway: palette.black,
+    path: palette.sage,
+    road: palette.charcoal,
+    roadMajor: "#4a5245",
+    building: palette.charcoal,
+    textPrimary: palette.topo,
+    textSecondary: palette.sage,
+    textHalo: palette.carbon,
   },
   fonts: {
-    regular: "Barlow Regular",
+    regular: "IBM Plex Sans Regular",
     // ignoré par le compilateur réduit du SDK, honoré par le style hébergé
-    labels: { place: "Barlow Bold", city: "Barlow Bold" },
+    labels: { place: "IBM Plex Sans Bold", city: "IBM Plex Sans Bold" },
   },
   terrain: {
     hillshade: true,
@@ -43,8 +46,7 @@ export const forestTheme = {
     shading: { intensity: HILLSHADE.intensity, direction: HILLSHADE.direction },
   },
   layers: { building: { visible: false } },
-  // Les cartouches des routes départementales françaises sont jaunes : or le jaune
-  // maillot doit rester la seule couleur saturée à l'écran.
+  // Les cartouches routiers sont colorés : la menthe doit rester la seule couleur à l'écran.
   territories: { planet: { road_shields: { visible: false } } },
 } as const;
 

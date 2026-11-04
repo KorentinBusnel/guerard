@@ -1,5 +1,5 @@
 /**
- * La carte MapMap : style forêt, relief, boucle.
+ * La carte MapMap de la page 2 : papier topo de nuit, relief, la boucle en menthe.
  *
  * Deux modes de style :
  * - `VITE_MAPMAP_STYLE_URL` défini → style hébergé (compilateur canonique : il porte
@@ -26,21 +26,12 @@ const TRANSPARENT = "rgba(0, 0, 0, 0)";
 
 export type StyleMode = "hosted" | "sdk-dev";
 
-/** État d'affichage de la boucle. Progressions en fraction de la boucle (0–1). */
-export interface TrackState {
-  /** Jusqu'où le tracé est dessiné (liseré sombre compris). */
-  drawn: number;
-  /** Jusqu'où le tracé est « parcouru » (jaune maillot). */
-  travelled: number;
-  /** Afficher le reste de la boucle en pointillé fougère. */
-  remaining: boolean;
-}
-
 export interface ForestMap {
   mm: MapMapMap;
   map: maplibregl.Map;
   styleMode: StyleMode;
-  setTrack(state: TrackState): void;
+  /** Dessine la boucle jusqu'à la fraction `p` (0–1) de sa longueur. */
+  setDrawn(p: number): void;
 }
 
 export interface ForestMapOptions {
@@ -72,12 +63,12 @@ function tuneDevHillshade(map: maplibregl.Map) {
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-anchor", "map");
 }
 
-/** Ciel et brume d'aube : sans ciel, l'horizon d'une vue inclinée reste vide. */
+/** Ciel et brume : sans ciel, l'horizon d'une vue inclinée reste vide. */
 function applySky(map: maplibregl.Map) {
   map.setSky({
-    "sky-color": "#0d1c14",
-    "horizon-color": mix(palette.brume, palette.sapin, 0.55),
-    "fog-color": mix(palette.sousBois, palette.brume, 0.18),
+    "sky-color": palette.carbon,
+    "horizon-color": mix(palette.sage, palette.carbon, 0.55),
+    "fog-color": mix(palette.carbon, palette.sage, 0.2),
     "sky-horizon-blend": 0.6,
     "horizon-fog-blend": 0.6,
     // où la brume COMMENCE (0 = à la caméra) : on la garde au loin
@@ -117,32 +108,17 @@ function addRoute(mm: MapMapMap) {
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, mix(palette.sapin, "#000000", 0.2)), "line-width": lineWidth(6), "line-opacity": 0.85 },
+      paint: { "line-gradient": cutAt(0, palette.black), "line-width": lineWidth(6), "line-opacity": 0.8 },
     },
     { slot: "top" },
   );
   mm.addPersistentLayer(
     {
-      id: "route-remaining",
-      type: "line",
-      source: "route",
-      layout: { "line-join": "round" },
-      paint: {
-        "line-color": palette.fougere,
-        "line-width": lineWidth(2.2),
-        "line-dasharray": [1.4, 1.6],
-        "line-opacity": 0,
-      },
-    },
-    { slot: "top" },
-  );
-  mm.addPersistentLayer(
-    {
-      id: "route-travelled",
+      id: "route-line",
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, palette.maillot), "line-width": lineWidth(3) },
+      paint: { "line-gradient": cutAt(0, palette.mint), "line-width": lineWidth(2.6) },
     },
     { slot: "top" },
   );
@@ -152,10 +128,10 @@ function addRoute(mm: MapMapMap) {
       type: "circle",
       source: "route-start",
       paint: {
-        "circle-radius": lineWidth(3.6),
-        "circle-color": palette.sapin,
-        "circle-stroke-color": palette.brume,
-        "circle-stroke-width": 2,
+        "circle-radius": lineWidth(3.4),
+        "circle-color": palette.carbon,
+        "circle-stroke-color": palette.mint,
+        "circle-stroke-width": 1.5,
         "circle-pitch-alignment": "map",
         "circle-opacity": 0,
         "circle-stroke-opacity": 0,
@@ -192,11 +168,10 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     logo: { position: "bottom-right" },
     attributionPosition: "bottom-left",
     mapOptions: {
-      // Carte de fond pilotée par la page : pas de zoom molette ni de glisser qui
-      // détourneraient le défilement.
+      // Carte de fond : pas de zoom molette ni de glisser qui détourneraient le défilement.
       interactive: false,
       maxPitch: 75,
-      pitch: mobile ? 40 : 60,
+      pitch: mobile ? 40 : 55,
       fadeDuration: 150,
     },
   });
@@ -214,18 +189,17 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
   // whenReady peut arriver après le premier style.load : on réapplique, c'est idempotent
   onStyle();
 
-  let last = "";
-  const setTrack = ({ drawn, travelled, remaining }: TrackState) => {
-    const key = `${drawn.toFixed(5)}|${travelled.toFixed(5)}|${remaining}`;
-    if (key === last || !map.getLayer("route-travelled")) return;
-    last = key;
-    map.setPaintProperty("route-casing", "line-gradient", cutAt(drawn, mix(palette.sapin, "#000000", 0.2)));
-    map.setPaintProperty("route-travelled", "line-gradient", cutAt(travelled, palette.maillot));
-    map.setPaintProperty("route-remaining", "line-opacity", remaining ? 0.9 : 0);
-    const startVisible = drawn >= 1 ? 1 : 0;
+  let last = -1;
+  const setDrawn = (p: number) => {
+    const q = Math.round(Math.min(Math.max(p, 0), 1) * 10_000) / 10_000;
+    if (q === last || !map.getLayer("route-line")) return;
+    last = q;
+    map.setPaintProperty("route-casing", "line-gradient", cutAt(q, palette.black));
+    map.setPaintProperty("route-line", "line-gradient", cutAt(q, palette.mint));
+    const startVisible = q >= 1 ? 1 : 0;
     map.setPaintProperty("route-start", "circle-opacity", startVisible);
     map.setPaintProperty("route-start", "circle-stroke-opacity", startVisible);
   };
 
-  return { mm, map, styleMode, setTrack };
+  return { mm, map, styleMode, setDrawn };
 }

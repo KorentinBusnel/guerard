@@ -1,12 +1,16 @@
-# Backyard de Guérard — landing page
+# Again and Again — Backyard de Guérard
 
-« L'étape qui ne finit jamais » : les codes TV du Tour de France (profil d'étape,
-incrustations, flamme rouge, maillot jaune, caméra hélico) dans un sous-bois de Brie.
+Landing de la backyard ultra de Guérard (77), édition « Again and Again », le
+28 novembre 2026. Deux pages :
 
-**Stack** : Vite + TypeScript **vanilla** (pas de React : une seule page dont l'essentiel
-est impératif, piloté par GSAP et MapLibre à 60 fps ; un framework n'ajouterait que du
-poids et des re-rendus), Tailwind v4, carte MapMap (`@mapmap/maps` sur MapLibre GL 6),
-GSAP + ScrollTrigger, turf.
+1. **Accueil** : le titre qui part et revient en boucle, le compte à rebours jusqu'au
+   premier départ, l'inscription **seul ou avec un ami**.
+2. **La boucle** (en scrollant) : le tracé GPX officiel sur une carte 3D MapMap en orbite
+   lente, avec D+, altitudes, montées et profil.
+
+**Stack** : Vite + TypeScript vanilla, Tailwind v4, carte MapMap (`@mapmap/maps` sur
+MapLibre GL 6). Pas de framework : une page courte, l'essentiel est impératif (rAF,
+MapLibre).
 
 ## Démarrer
 
@@ -18,113 +22,116 @@ npm run preview         # sert dist/
 ```
 
 En local, la carte fonctionne **sans clé** (les tuiles sans clé servent localhost).
-En production, une clé navigateur est obligatoire (sinon tuiles 403).
+En production, une clé navigateur est obligatoire (sinon tuiles 403 et carte vide).
+
+## Variables d'environnement
+
+Copier `.env.example` en `.env` (en prod : variables du projet Vercel).
+
+| Variable | Où | Rôle |
+|---|---|---|
+| `VITE_INSCRIPTION_ENDPOINT` | navigateur | Adresse qui reçoit les inscriptions (ci-dessous). Vide → bouton désactivé. |
+| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap restreinte à l'origine du site. **Obligatoire en prod.** |
+| `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
+| `SITE_URL` | build | URL publique (rend `og:image` absolue). |
+| `MAPMAP_API_KEY` | scripts uniquement | `prepare:route`, `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
+
+## Inscription
+
+Le formulaire (`src/sections/inscription.ts`) envoie un `POST` JSON à
+`VITE_INSCRIPTION_ENDPOINT` avec `Accept: application/json` :
+
+```json
+{ "formule": "solo|duo", "nom": "…", "email": "…", "ami_nom": "…", "ami_email": "…",
+  "consentement": true, "edition": "Again and Again",
+  "_subject": "Inscription Again and Again — duo", "_replyto": "…" }
+```
+
+C'est le format de **Formspree** : créer un formulaire sur formspree.io, coller son URL
+(`https://formspree.io/f/xxxxxxxx`) dans `VITE_INSCRIPTION_ENDPOINT`, redéployer. Chaque
+inscription arrive par e-mail à l'organisateur et reste exportable en CSV. Tout autre
+service qui accepte un POST JSON convient. Anti-spam : champ pot de miel `_gotcha`.
+Case de consentement obligatoire ; le lien vers les mentions légales vient de
+`event.legalUrl`.
+
+## Contenu
+
+| Fichier | Statut |
+|---|---|
+| `src/content/event.ts` | Nom, édition, date, heure de départ, tarif, dossards, organisateur, contact, mentions légales. `null` = placeholder `[… À CONFIRMER]` à l'écran. |
+| `data/boucle.gpx` | Tracé officiel (lat/lon/ele uniquement : heure et fréquence cardiaque retirées). |
+
+Le compte à rebours vise `event.date` à `event.startTime` (heure de Paris) ; tant que
+l'heure n'est pas connue, il vise minuit.
+
+Les textes sont écrits dans `index.html` **au build** (gabarit `{{clé}}` / `{{html:bloc}}`
+/ `{{svg:route}}`, cf. `vite.config.ts`, `src/content/view.ts`, `src/content/blocks.ts`) :
+la page se lit sans JS.
 
 ## Scripts de données (build-time, résultats commités)
 
 | Script | Rôle |
 |---|---|
-| `npm run prepare:route` | `data/boucle.gpx` (ou la boucle MOCK) → `src/data/route.json` : distances, altitude, pente lissée, D+, cap caméra lissé (150 m), montées, panneaux km, flamme rouge, POI. |
-| `npm run prepare:inscrits` | `data/inscrits.csv` (ou `.json`) → `src/data/inscrits.json` pour la section « Le peloton ». Sans fichier : liste **MOCK** fictive (badge rouge). |
-| `npm run create:style` | Publie le thème forêt comme style hébergé MapMap (`POST /styles`, puis versions suivantes) et écrit l'URL dans `.env.local`. Clé serveur requise. |
+| `npm run prepare:route` | `data/boucle.gpx` → `src/data/route.json` : distances, altitude, pente lissée, D+, montées. |
+| `npm run create:style` | Publie le thème carte comme style hébergé MapMap et écrit l'URL dans `.env.local`. Clé serveur requise. |
 | `npm run capture:images` | Après `npm run build` : capture `public/img/og.jpg` et `public/img/carte-fallback.webp` depuis la page (`?capture=og|fallback`). Navigateur : `CHROME_PATH`, sinon Chrome installé. |
-| `npm run static:map` | Même images via l'API Static Map de MapMap (`style=outdoor`, tracé en polyline **précision 6**). **À ce jour, le rendu Static Map ne couvre pas la France** (fond vide, relief seul) : d'où `capture:images` en attendant. |
+| `npm run static:map` | Mêmes images via l'API Static Map de MapMap. À ce jour son rendu ne couvre pas la France (fond vide) : d'où `capture:images`. |
 
-Après réception du vrai GPX : `npm run prepare:route && npm run build && npm run capture:images`.
+Nouveau tracé : `npm run prepare:route && npm run build && npm run capture:images`.
 
-## Clés et style
+## Design
 
-Copier `.env.example` en `.env` :
+Référence « San Rita » (guide de terrain sur papier sauge), adaptée en nuit pour la
+carte :
 
-| Variable | Où | Rôle |
-|---|---|---|
-| `MAPMAP_API_KEY` | scripts uniquement | `prepare:route` (`/elevation/along`), `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
-| `VITE_MAPMAP_KEY` | navigateur | Clé restreinte à l'origine du site. |
-| `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
-| `SITE_URL` | build | URL publique (rend `og:image` absolue). |
+- **Couleurs** : un seul accent, Highlighter Mint `#e2ffcc` (titre, tracé, chiffres) ;
+  neutres Carbon Ink `#161b13`, Forest Charcoal `#2d3329`, Sage Stone `#84907f`,
+  Topo Gray `#dde2e4`. Tokens dans `src/styles/app.css` (`@theme`) et
+  `src/styles/tokens.ts` (carte, SVG).
+- **Typo** : Bebas Neue (titres, interligne 0,9), IBM Plex Mono en capitales 10/12/16 px
+  (légendes, boutons, formulaire), Times pour les liens de texte.
+- Angles droits, aucune ombre, boutons en contour 1 px, gouttière 24/40 px.
+- **Titre en boucle** : chaque lettre sort par le haut et revient par le bas, en vague,
+  à chaque tour du coureur sur la petite boucle (`src/sections/hero.ts`, 7 s par tour,
+  compteur « Yard NN »).
 
-Sans `VITE_MAPMAP_STYLE_URL`, la carte se rabat sur le **compilateur réduit du SDK**
-(badge « Style : repli SDK (dev) » en dev) : il refuse le bloc `terrain`, donc relief et
-ombrage sont demandés au SDK et l'ombrage est recoloré selon les règles du compilateur
-canonique. Le rendu de référence reste le style hébergé. Le thème vit dans
-`src/map/theme.ts` (source unique).
+## Carte
 
-## Contenu et données
-
-| Fichier | Statut |
-|---|---|
-| `src/content/event.ts` | Nom, date, heure, tarif, lien, dossards, camp de base, ravito, accès, règlement, matériel, organisateur, FAQ. `null` = placeholder `[… À CONFIRMER]`. |
-| `data/boucle.gpx` | **À fournir.** Absent → `data/boucle.mock.gpx` (boucle **MOCK** fictive, badge rouge à l'écran, note en pied de page). |
-| `data/poi.json` | **À fournir.** Format : `data/poi.example.json`. |
-| `data/inscrits.csv` | **À fournir** (export de la plateforme d'inscription, `,` ou `;`). Colonnes : `dossard`, `nom` (ou `prenom` + `nom_famille`), `club` (facultatif), `objectif` (yards, facultatif). Format : `data/inscrits.example.csv`. Absent → liste MOCK. |
-| `public/img/` | Logo, photos : à fournir (AVIF/WebP). |
-
-Les textes sont écrits dans `index.html` **au build** (gabarit `{{clé}}` / `{{html:bloc}}`,
-cf. `vite.config.ts`, `src/content/view.ts`, `src/content/blocks.ts`) : lisibles sans JS.
-
-## Le peloton (gamification)
-
-Section `#peloton`, entre le compteur et les infos pratiques :
-
-- **Classement prévisionnel** : les inscrits classés par objectif annoncé (yards), ex æquo
-  partagés (« =5 »), maillot jaune virtuel pour l'objectif le plus haut, palier atteint
-  (semi, marathon, 100 km, 100 miles, calculés sur la boucle réelle), recherche par nom
-  ou dossard, top 10 puis « tout le peloton ».
-- **Le peloton s'égrène** : une barre par yard (combien d'inscrits visent au moins ce
-  yard), curseur qui lit le yard choisi et désigne le dernier debout prévisionnel.
-- **Ton prono** : le visiteur choisit son dernier debout et un nombre de yards ; la page
-  le situe (« plus optimiste que 96 % des objectifs annoncés », comparaison avec
-  l'objectif du coureur), le garde dans le navigateur et le partage par lien
-  (`?prono=<dossard>-<yards>#peloton`, Web Share ou copie). Aucun serveur : rien n'est
-  collecté.
-
-**Données personnelles** : par défaut, `prepare:inscrits` réduit les noms à « Prénom N. ».
-Publier la liste suppose le consentement des inscrits ; `INSCRITS_NOMS_COMPLETS=1` garde
-les noms tels quels.
-
-## Architecture de la page
-
-- **Carte fixe en fond** (`#map-layer`), visible à travers le hero et la section
-  parcours ; les sections opaques la recouvrent (la caméra s'arrête alors).
-- **État partagé** (`src/state.ts`) : scène + distance du coureur. ScrollTrigger l'alimente
-  (`src/scroll/scenes.ts`) ; HUD et profil (`src/sections/course.ts`) et carte
-  (`src/map/course.ts`) s'y abonnent. Tout dérive de la même distance `d` : puck, HUD,
-  profil et caméra sont synchronisés.
-- **Chargement** : le hero (texte + affiche SVG du tracé) s'affiche seul ; les sections
-  sous le hero sont un chunk différé ; la carte WebGL (~1 Mo) démarre à la première
-  interaction ou ~3,5 s après le chargement, et la page ne crée aucun contexte WebGL
-  avant.
+- Calque fixe (`#map-layer`) sous la page 2 ; la page 1 est opaque et la recouvre.
+- MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé au premier défilement, quand on
+  approche de la page 2 : aucun contexte WebGL n'est créé au chargement (sur grand écran
+  la page 2 commence juste sous la ligne de flottaison, d'où l'attente du défilement).
+  L'orbite tourne seulement quand la page 2 est à l'écran ; le tracé se dessine à la
+  première arrivée.
+- Thème dans `src/map/theme.ts`. Sans `VITE_MAPMAP_STYLE_URL`, repli sur le compilateur
+  réduit du SDK (qui refuse le bloc `terrain`) : relief et ombrage demandés au SDK.
+- Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
+  (voile de lisibilité placé sous les coins de contrôle).
 
 ## Accessibilité, mouvement, fallback
 
-- `prefers-reduced-motion` : pas d'orbite ni de caméra qui suit, tracé complet, section
-  parcours en vue statique (fiches étape listées), animations CSS coupées.
-- Sans WebGL 2 : image statique de la carte (`carte-fallback.webp`) et parcours statique.
-- Mobile : pitch 40–45°, exagération 1,2, HUD réduit à KM + ALT, profil pleine largeur.
-- HUD et incrustations `aria-hidden`, infos clés dupliquées en texte.
+- `prefers-reduced-motion` : titre et petite boucle figés (tracé complet), carte fixe
+  sans orbite, tracé affiché d'emblée.
+- Sans WebGL 2 ou si MapLibre échoue : image statique de la carte (`carte-fallback.webp`).
+- Titre animé en `aria-hidden`, doublé d'un texte pour les lecteurs d'écran ; compte à
+  rebours étiqueté ; statut du formulaire en `role="status"`.
 
 ## Lighthouse (build prod, Chromium headless sans GPU)
 
-Mobile : performance 98 (5 passes), accessibilité 100, bonnes pratiques 100, SEO 100.
-Desktop : 100 / 100 / 100 / 100. Ces mesures portent sur la page **avant** le démarrage
-de la carte WebGL (différé, cf. ci-dessus) ; sans GPU, WebGL tourne en logiciel et chaque
-image de carte serait une longue tâche.
+Mobile (3 passes) et desktop : performance 100, accessibilité 100, bonnes pratiques 100,
+SEO 100 (TBT 0 ms, CLS 0). Les deux polices du premier écran sont préchargées au build
+(`vite.config.ts`) : sans cela leur arrivée décalait le formulaire (CLS 0,28).
 
 ## Pièges traités
 
 - **Carte blanche sous Vite** : worker MapLibre 6 copié dans `public/vendor/maplibre/`
   avant chaque `dev`/`build` + `setWorkerUrl`.
-- **Tailwind v4 vs `maplibre-gl.css`** : CSS MapLibre dans le layer `vendor`, placé entre
-  `base` et `utilities` (tout en bas, le preflight Tailwind réaffiche le bouton (i) de
-  l'attribution par-dessus le crédit OSM) ; chargé avec le chunk carte
-  (`src/map/vendor.css`) ; `#map` positionné en style inline.
-- **Marqueurs MapLibre** : l'occlusion par le relief écrit `style.opacity` sur l'élément
-  racine → on stylise un enfant.
+- **Tailwind v4 vs `maplibre-gl.css`** : CSS MapLibre dans le layer `vendor`, entre
+  `base` et `utilities`, chargé avec le chunk carte (`src/map/vendor.css`) ; `#map`
+  positionné en style inline.
+- **`cameraForBounds`** : padding remis à zéro avant le calcul (sinon il s'additionne au
+  padding posé sur la carte et dézoome).
 - **Double ombrage** : avec le style hébergé, `hillshade: false` côté SDK.
-- **Jaune unique** : cartouches routiers (D20 jaunes) masqués ; teintes de pente du
-  profil désaturées.
-- Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
-  (voile du hero placé sous les coins de contrôle, mini-profil au-dessus).
 
 ## Outils agents
 
