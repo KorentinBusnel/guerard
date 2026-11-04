@@ -13,10 +13,10 @@ export const event = {
   /** Date du départ, ISO `YYYY-MM-DD` (le 28 novembre, d'après le nom de la trace officielle). */
   date: "2026-11-28" as string | null,
   /** Heure du premier départ, `HH:MM`, heure de Paris. Le compte à rebours la vise dès qu'elle est connue. */
-  startTime: null as string | null,
+  startTime: "10:00" as string | null,
   /** Tarif d'inscription, en euros. */
-  priceEur: null as number | null,
-  bibs: null as number | null,
+  priceEur: 25 as number | null,
+  bibs: 50 as number | null,
   /** Organisateur, contact, mentions légales (le formulaire collecte des données personnelles). */
   organizer: null as string | null,
   contactEmail: null as string | null,

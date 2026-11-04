@@ -28,5 +28,7 @@ export function dateLabel(): string {
 }
 
 export function startTimeLabel(): string {
-  return event.startTime ? event.startTime.replace(":", " h ") : tbc("heure de départ");
+  if (!event.startTime) return tbc("heure de départ");
+  const [h, m] = event.startTime.split(":");
+  return m === "00" ? `${Number(h)} h` : `${Number(h)} h ${m}`;
 }
