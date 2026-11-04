@@ -41,7 +41,11 @@ function contentTemplate(): Plugin {
  * Précharge les polices du premier écran (titre, compte à rebours, légendes) : sans cela
  * elles ne sont découvertes qu'après le CSS et leur arrivée décale la mise en page.
  */
-const CRITICAL_FONTS = [/bebas-neue-latin-400-normal-[\w-]+\.woff2$/, /ibm-plex-mono-latin-400-normal-[\w-]+\.woff2$/];
+const CRITICAL_FONTS = [
+  /instrument-serif-latin-400-italic-[\w-]+\.woff2$/,
+  /bebas-neue-latin-400-normal-[\w-]+\.woff2$/,
+  /ibm-plex-mono-latin-400-normal-[\w-]+\.woff2$/,
+];
 
 function preloadFonts(): Plugin {
   let base = "/";

@@ -9,7 +9,7 @@
 import { palette } from "../styles/tokens";
 
 /** Exagération du relief : le relief de Guérard est doux (≈ 50–150 m). */
-export const TERRAIN_EXAGGERATION = { desktop: 1.6, mobile: 1.2 } as const;
+export const TERRAIN_EXAGGERATION = { desktop: 2.2, mobile: 1.8 } as const;
 
 export const HILLSHADE = { intensity: 0.55, direction: 335 } as const;
 

@@ -3,10 +3,14 @@
 Landing de la backyard ultra de Guérard (77), édition « Again and Again », le
 28 novembre 2026. Deux pages :
 
-1. **Accueil** : le titre qui part et revient en boucle, le compte à rebours jusqu'au
-   premier départ, l'inscription **seul ou avec un ami**.
-2. **La boucle** (en scrollant) : le tracé GPX officiel sur une carte 3D MapMap en orbite
-   lente, avec D+, altitudes, montées et profil.
+1. **Accueil** : le titre (ses lettres partent et reviennent toutes les 4 s) et le compte
+   à rebours, devant la **boucle GPX en 3D** : le tracé en grand sur le relief, dressé
+   d'un « mur » d'altitude, un coureur qui fait le tour et allume le mur sur son passage
+   (« Yard 01, 02… »), en orbite lente. On la fait tourner en la glissant ; boutons
+   Pause et Vue de dessus / Vue 3D.
+2. **La boucle et l'inscription** (en scrollant) : distance, D+, altitudes, montées ;
+   l'inscription **seul ou avec un ami** ; au bas, le **relief en grand** (profil
+   d'altitude avec kilomètres, montées et points haut et bas).
 
 **Stack** : Vite + TypeScript vanilla, Tailwind v4, carte MapMap (`@mapmap/maps` sur
 MapLibre GL 6). Pas de framework : une page courte, l'essentiel est impératif (rAF,
@@ -88,39 +92,51 @@ carte :
   neutres Carbon Ink `#161b13`, Forest Charcoal `#2d3329`, Sage Stone `#84907f`,
   Topo Gray `#dde2e4`. Tokens dans `src/styles/app.css` (`@theme`) et
   `src/styles/tokens.ts` (carte, SVG).
-- **Typo** : Bebas Neue (titres, interligne 0,9), IBM Plex Mono en capitales 10/12/16 px
-  (légendes, boutons, formulaire), Times pour les liens de texte.
+- **Typo** : le titre « Again and Again » en Instrument Serif italique (seul de son
+  espèce) ; Bebas Neue pour le nom, les chiffres et les titres (interligne 0,9) ;
+  IBM Plex Mono en capitales 12–16 px (légendes, boutons, formulaire) ; Times pour les
+  liens de texte.
 - Angles droits, aucune ombre, boutons en contour 1 px, gouttière 24/40 px.
-- **Titre en boucle** : chaque lettre sort par le haut et revient par le bas, en vague,
-  à chaque tour du coureur sur la petite boucle (`src/sections/hero.ts`, 7 s par tour,
-  compteur « Yard NN »).
+- **Titre en boucle** : toutes les 4 s, chaque lettre sort par le haut et revient par le
+  bas, en vague (`src/sections/hero.ts`).
 
-## Carte
+## Scène 3D (page 1)
 
-- Calque fixe (`#map-layer`) sous la page 2 ; la page 1 est opaque et la recouvre.
-- MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé au premier défilement, quand on
-  approche de la page 2 : aucun contexte WebGL n'est créé au chargement (sur grand écran
-  la page 2 commence juste sous la ligne de flottaison, d'où l'attente du défilement).
-  L'orbite tourne seulement quand la page 2 est à l'écran ; le tracé se dessine à la
-  première arrivée.
+- Calque `#map-layer` en haut de page, sous la page 1 (transparente) ; la page 2 est
+  opaque.
+- **Mur d'altitude** (`src/map/wall.ts`) : le tracé découpé en tronçons de ~15 m,
+  extrudés (`fill-extrusion`) à une hauteur qui suit l'altitude ; MapLibre pose chaque
+  tronçon sur le relief. Le coureur (`src/map/runner.ts`, un tour en 26 s) les allume
+  par `feature-state`, sans relancer le découpage des tuiles.
+- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre ;
+  orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
+  au défilement), transition vue de dessus / 3D. Relief exagéré ×2,2 (×1,8 mobile).
+- MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé à la première interaction ou
+  3,5 s après le chargement ; avant, le tracé est dessiné en SVG à la même place.
+  Tout s'arrête quand la page 1 quitte l'écran ou que l'onglet est caché.
 - Thème dans `src/map/theme.ts`. Sans `VITE_MAPMAP_STYLE_URL`, repli sur le compilateur
   réduit du SDK (qui refuse le bloc `terrain`) : relief et ombrage demandés au SDK.
+- Sans clé (`VITE_MAPMAP_KEY`) hors localhost, le fond de carte est refusé (403) : il
+  reste le relief, la boucle et son mur.
 - Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
-  (voile de lisibilité placé sous les coins de contrôle).
+  (voile de lisibilité placé sous les coins de contrôle, contenu de la page 1 hors des
+  coins bas).
 
 ## Accessibilité, mouvement, fallback
 
-- `prefers-reduced-motion` : titre et petite boucle figés (tracé complet), carte fixe
-  sans orbite, tracé affiché d'emblée.
-- Sans WebGL 2 ou si MapLibre échoue : image statique de la carte (`carte-fallback.webp`).
+- Bouton **Pause** : arrête tout ce qui bouge (titre, orbite, coureur).
+- `prefers-reduced-motion` : titre figé, scène fixe sans orbite ni coureur, mur
+  entièrement allumé.
+- Sans WebGL 2 ou si MapLibre échoue : image statique de la scène (`carte-fallback.webp`).
 - Titre animé en `aria-hidden`, doublé d'un texte pour les lecteurs d'écran ; compte à
-  rebours étiqueté ; statut du formulaire en `role="status"`.
+  rebours étiqueté ; relief décrit par sa légende ; statut du formulaire en
+  `role="status"`.
 
 ## Lighthouse (build prod, Chromium headless sans GPU)
 
 Mobile (3 passes) et desktop : performance 100, accessibilité 100, bonnes pratiques 100,
-SEO 100 (TBT 0 ms, CLS 0). Les deux polices du premier écran sont préchargées au build
-(`vite.config.ts`) : sans cela leur arrivée décalait le formulaire (CLS 0,28).
+SEO 100 (TBT 0 ms, CLS 0). Les trois polices du premier écran sont préchargées au build
+(`vite.config.ts`) : sans cela leur arrivée décalait la mise en page (CLS 0,28).
 
 ## Pièges traités
 
@@ -132,6 +148,11 @@ SEO 100 (TBT 0 ms, CLS 0). Les deux polices du premier écran sont préchargées
 - **`cameraForBounds`** : padding remis à zéro avant le calcul (sinon il s'additionne au
   padding posé sur la carte et dézoome).
 - **Double ombrage** : avec le style hébergé, `hillshade: false` côté SDK.
+- **Mur qui s'allume** : changer une propriété *data-driven* (couleur par expression)
+  relance le découpage de toute la source ; `feature-state` ne met à jour que la
+  peinture des tronçons touchés.
+- **Orbite et transitions** : le `jumpTo` de l'orbite couperait un `easeTo` à l'image
+  suivante ; l'inclinaison (vue de dessus / 3D) est donc animée dans la même boucle.
 
 ## Outils agents
 
