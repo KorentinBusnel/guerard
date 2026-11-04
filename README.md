@@ -4,9 +4,9 @@ Landing de la backyard ultra de Guérard (77), édition « Again and Again », l
 28 novembre 2026. Deux pages :
 
 1. **Accueil** : le titre (ses lettres filent et reviennent toutes les 4 s) et le compte
-   à rebours, devant la **boucle GPX en 3D** : le tracé en grand sur le relief, dressé
-   d'un « mur » d'altitude, un coureur qui fait le tour et allume le mur sur son passage
-   (« Yard 01, 02… »), en orbite lente. On la fait tourner en la glissant ; boutons
+   à rebours, devant la **boucle GPX en 3D** : le tracé en grand sur le relief, la
+   forêt, les rivières, les routes et les villages, un coureur qui en fait le tour
+   (« Yard 01, 02… »), en orbite lente. Le dénivelé est au bas de la page 2. On la fait tourner en la glissant ; boutons
    Pause et Vue de dessus / Vue 3D.
 2. **La boucle et l'inscription** (en scrollant, devant la même scène 3D, que la caméra
    recadre dans l'espace libre) : distance, D+, altitudes, montées ; l'inscription
@@ -111,12 +111,12 @@ carte :
 
 - Calque `#map-layer` fixe, sous les deux pages (transparentes) ; le pied de page,
   opaque, le recouvre.
-- **Mur d'altitude** (`src/map/wall.ts`) : le tracé découpé en tronçons de ~15 m,
-  extrudés (`fill-extrusion`) à une hauteur qui suit l'altitude ; MapLibre pose chaque
-  tronçon sur le relief. Le coureur (`src/map/runner.ts`, un tour en 26 s) les allume
-  par `feature-state`, sans relancer le découpage des tuiles.
+- **Boucle** : ligne menthe dessinée en 4 s à l'arrivée de la scène ; le coureur
+  (`src/map/runner.ts`, un tour en 26 s, position par `src/map/track.ts`) en fait le
+  tour, encore et encore.
 - **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, puis
-  (grand écran) à gauche du formulaire de la page 2, au fil du défilement ; orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
+  (grand écran) à gauche du formulaire de la page 2, au fil du défilement ; orbite
+  lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
   au défilement), transition vue de dessus / 3D. Relief exagéré ×2,2 (×1,8 mobile).
 - MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé à la première interaction ou
   3,5 s après le chargement ; avant, le tracé est dessiné en SVG à la même place.
@@ -129,8 +129,7 @@ carte :
 - Thème dans `src/map/theme.ts`. Sans `VITE_MAPMAP_STYLE_URL`, repli sur le compilateur
   réduit du SDK (qui refuse le bloc `terrain`) : relief et ombrage demandés au SDK.
 - Sans clé (`VITE_MAPMAP_KEY`) hors localhost, le fond vectoriel est refusé (403) :
-  forêt, routes, rivières et villages disparaissent, il reste le relief, la boucle et
-  son mur.
+  forêt, routes, rivières et villages disparaissent, il reste le relief et la boucle.
 - Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
   (voile de lisibilité placé sous les coins de contrôle, bas des pages laissé libre).
 
@@ -138,8 +137,8 @@ carte :
 
 - Bouton **Pause** (page 1 et page 2) : arrête tout ce qui bouge (titre, orbite,
   coureur).
-- `prefers-reduced-motion` : titre figé, scène fixe sans orbite ni coureur, mur
-  entièrement allumé.
+- `prefers-reduced-motion` : titre figé, scène fixe sans orbite ni coureur, boucle
+  dessinée d'emblée.
 - Sans WebGL 2 ou si MapLibre échoue : image statique de la scène (`carte-fallback.webp`).
 - Titre animé en `aria-hidden`, doublé d'un texte pour les lecteurs d'écran ; compte à
   rebours étiqueté ; relief décrit par sa légende ; statut du formulaire en
@@ -161,9 +160,6 @@ SEO 100 (TBT 0 ms, CLS 0). Les trois polices du premier écran sont préchargée
 - **`cameraForBounds`** : padding remis à zéro avant le calcul (sinon il s'additionne au
   padding posé sur la carte et dézoome).
 - **Double ombrage** : avec le style hébergé, `hillshade: false` côté SDK.
-- **Mur qui s'allume** : changer une propriété *data-driven* (couleur par expression)
-  relance le découpage de toute la source ; `feature-state` ne met à jour que la
-  peinture des tronçons touchés.
 - **Orbite et transitions** : le `jumpTo` de l'orbite couperait un `easeTo` à l'image
   suivante ; l'inclinaison (vue de dessus / 3D) est donc animée dans la même boucle.
 

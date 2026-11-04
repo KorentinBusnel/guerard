@@ -1,7 +1,7 @@
 /**
  * La scène 3D en fond fixe des deux pages (chunk chargé après le premier affichage) : la
- * boucle en grand sur le relief, son mur d'altitude, le coureur qui l'allume tour après
- * tour, l'orbite lente. On la fait tourner en la glissant.
+ * boucle en grand sur le relief, le coureur qui en fait le tour, encore et encore,
+ * l'orbite lente. On la fait tourner en la glissant.
  */
 import { createForestMap } from "./forestMap";
 import { HeliCamera } from "./camera";

@@ -1,11 +1,10 @@
 /**
- * Le coureur de la page 2 : il fait le tour de la boucle, encore et encore. Sur son
- * passage le mur d'altitude s'allume ; au bout du tour, tout s'éteint et le yard suivant
- * part. La lecture « Yard · km · altitude » suit le même point.
+ * Le coureur de la scène 3D : il fait le tour de la boucle, encore et encore ; au bout du
+ * tour, le yard suivant part. La lecture « Yard · km · altitude » suit le même point.
  */
 import * as maplibregl from "maplibre-gl";
 import { route } from "../data/route";
-import { eleAt, pointAt } from "./wall";
+import { eleAt, pointAt } from "./track";
 import { km, pad2 } from "../lib/format";
 import type { ForestMap } from "./forestMap";
 
@@ -23,13 +22,12 @@ export class Runner {
   /** Temps de course accumulé dans le tour (ms) : la pause le fige. */
   private elapsed = 0;
   private lastT = 0;
-  private lit = 0;
   private yard = 1;
   private lastText = "";
   private readonly pausedBy = new Set<string>();
 
   constructor(
-    private readonly fm: ForestMap,
+    fm: ForestMap,
     private readonly ui: RunnerUi,
   ) {
     // L'occultation par le relief écrit `style.opacity` sur l'élément racine du marqueur :
@@ -55,10 +53,8 @@ export class Runner {
     }
   }
 
-  /** Mur entièrement allumé, coureur au départ (reduced motion, captures). */
+  /** Pas de coureur (reduced motion, captures). */
   showStatic() {
-    for (const s of this.fm.wall) this.fm.setWallRun(s.id, true);
-    this.lit = this.fm.wall.length;
     this.marker.remove();
     if (this.ui.readout) this.ui.readout.hidden = true;
   }
@@ -69,8 +65,6 @@ export class Runner {
     if (this.elapsed >= LAP_MS) {
       this.elapsed %= LAP_MS;
       this.yard++;
-      this.fm.resetWall();
-      this.lit = 0;
     }
     this.render((this.elapsed / LAP_MS) * route.totalM);
     this.raf = requestAnimationFrame(this.tick);
@@ -78,8 +72,6 @@ export class Runner {
 
   private render(d: number) {
     this.marker.setLngLat(pointAt(d));
-    const wall = this.fm.wall;
-    while (this.lit < wall.length && wall[this.lit].d1 <= d) this.fm.setWallRun(wall[this.lit++].id, true);
     const ele = eleAt(d);
     const text = `Yard ${pad2(this.yard)} · km ${km(d, 2)} · ${Math.round(ele)} m`;
     if (this.ui.readout && text !== this.lastText) this.ui.readout.textContent = this.lastText = text;

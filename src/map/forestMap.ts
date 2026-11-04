@@ -1,6 +1,6 @@
 /**
  * La scène MapMap (fond des deux pages) : le relief ombré, la forêt, l'eau, les routes et
- * les villages ; la boucle en menthe et son mur d'altitude.
+ * les villages ; la boucle en menthe.
  *
  * Deux modes de style :
  * - `VITE_MAPMAP_STYLE_URL` défini → style hébergé (compilateur canonique : il porte
@@ -16,7 +16,6 @@ import type { FeatureCollection, LineString, Point } from "geojson";
 import { forestTheme, HILLSHADE, sdkCompatibleTheme, TERRAIN_EXAGGERATION } from "./theme";
 import { palette } from "../styles/tokens";
 import { route } from "../data/route";
-import { buildWall, WALL_H_MAX, WALL_H_MIN, type WallSegment } from "./wall";
 
 // CSS MapLibre dans le layer `vendor` (vendor.css). Ne jamais importer
 // maplibre-gl.css directement : une copie hors layer battrait les utilitaires Tailwind.
@@ -34,12 +33,6 @@ export interface ForestMap {
   styleMode: StyleMode;
   /** Dessine la boucle jusqu'à la fraction `p` (0–1) de sa longueur. */
   setDrawn(p: number): void;
-  /** Tronçons du mur d'altitude, dans l'ordre du parcours. */
-  wall: WallSegment[];
-  /** Allume (ou éteint) un tronçon du mur. */
-  setWallRun(id: number, run: boolean): void;
-  /** Éteint tout le mur (nouveau tour). */
-  resetWall(): void;
 }
 
 export interface ForestMapOptions {
@@ -85,8 +78,8 @@ function applySky(map: maplibregl.Map) {
   });
 }
 
-/** Nos couches (la boucle, son mur, le départ) : toujours visibles. */
-const OWN_LAYERS = new Set(["route-wall", "route-casing", "route-line", "route-start"]);
+/** Nos couches (la boucle, le départ) : toujours visibles. */
+const OWN_LAYERS = new Set(["route-casing", "route-line", "route-start"]);
 
 /**
  * Ce qu'on garde du fond de carte, sur le relief : la forêt, l'eau et les rivières, les
@@ -131,46 +124,6 @@ function cutAt(p: number, color: string): ExpressionSpecification {
 const lineWidth = (base: number) =>
   ["interpolate", ["exponential", 1.6], ["zoom"], 12, base * 0.6, 15, base * 1.4, 17, base * 3] as unknown as number;
 
-/** Mur éteint : du charbon au sauge selon la hauteur ; allumé : du sauge à la menthe. */
-function wallColor(): ExpressionSpecification {
-  const ramp = (lo: string, hi: string): ExpressionSpecification => [
-    "interpolate",
-    ["linear"],
-    ["get", "h"],
-    WALL_H_MIN,
-    lo,
-    WALL_H_MAX,
-    hi,
-  ];
-  return [
-    "case",
-    ["boolean", ["feature-state", "run"], false],
-    ramp(mix(palette.sage, palette.mint, 0.7), palette.mint),
-    ramp(mix(palette.carbon, palette.charcoal, 0.6), mix(palette.charcoal, palette.sage, 0.55)),
-  ];
-}
-
-function addWall(mm: MapMapMap, mobile: boolean): WallSegment[] {
-  const { data, segments } = buildWall(mobile ? 6 : 4.5);
-  mm.addPersistentSource("route-wall", { type: "geojson", data });
-  mm.addPersistentLayer(
-    {
-      id: "route-wall",
-      type: "fill-extrusion",
-      source: "route-wall",
-      paint: {
-        "fill-extrusion-color": wallColor(),
-        "fill-extrusion-height": ["get", "h"],
-        "fill-extrusion-base": 0,
-        "fill-extrusion-opacity": 0.88,
-        "fill-extrusion-vertical-gradient": true,
-      },
-    },
-    { slot: "top" },
-  );
-  return segments;
-}
-
 function addRoute(mm: MapMapMap) {
   const line: FeatureCollection<LineString> = {
     type: "FeatureCollection",
@@ -190,7 +143,7 @@ function addRoute(mm: MapMapMap) {
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, palette.black), "line-width": lineWidth(6), "line-opacity": 0.8 },
+      paint: { "line-gradient": cutAt(0, palette.black), "line-width": lineWidth(8), "line-opacity": 0.8 },
     },
     { slot: "top" },
   );
@@ -200,7 +153,7 @@ function addRoute(mm: MapMapMap) {
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, palette.mint), "line-width": lineWidth(2.6) },
+      paint: { "line-gradient": cutAt(0, palette.mint), "line-width": lineWidth(3.6) },
     },
     { slot: "top" },
   );
@@ -265,7 +218,6 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     if (styleMode === "sdk-dev") tuneDevHillshade(map);
   };
   map.on("style.load", onStyle);
-  const wall = addWall(mm, mobile);
   addRoute(mm);
 
   await mm.whenReady();
@@ -284,12 +236,5 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     map.setPaintProperty("route-start", "circle-stroke-opacity", startVisible);
   };
 
-  const setWallRun = (id: number, run: boolean) => {
-    if (map.getSource("route-wall")) map.setFeatureState({ source: "route-wall", id }, { run });
-  };
-  const resetWall = () => {
-    if (map.getSource("route-wall")) map.removeFeatureState({ source: "route-wall" });
-  };
-
-  return { mm, map, styleMode, setDrawn, wall, setWallRun, resetWall };
+  return { mm, map, styleMode, setDrawn };
 }
