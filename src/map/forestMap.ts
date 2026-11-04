@@ -1,6 +1,6 @@
 /**
- * La scène MapMap (fond des deux pages) : le relief ombré seul, la boucle en menthe et
- * son mur d'altitude.
+ * La scène MapMap (fond des deux pages) : le relief ombré, la forêt, l'eau, les routes et
+ * les villages ; la boucle en menthe et son mur d'altitude.
  *
  * Deux modes de style :
  * - `VITE_MAPMAP_STYLE_URL` défini → style hébergé (compilateur canonique : il porte
@@ -89,15 +89,37 @@ function applySky(map: maplibregl.Map) {
 const OWN_LAYERS = new Set(["route-wall", "route-casing", "route-line", "route-start"]);
 
 /**
- * Fond « relief seul » : on ne garde du fond de carte que la couleur de fond et l'ombrage
- * du relief ; routes, rivières, bâti et noms de lieux sont masqués. MapLibre ne charge pas
- * les tuiles d'une source dont toutes les couches sont masquées : le fond vectoriel n'est
- * plus téléchargé (et la clé MapMap n'est plus nécessaire à l'affichage).
+ * Ce qu'on garde du fond de carte, sur le relief : la forêt, l'eau et les rivières, les
+ * routes (sans les chemins ni le rail) et les noms de villes et villages. Le reste
+ * (bâti, points d'intérêt, noms de rues, cartouches, limites) est masqué ; MapLibre ne
+ * télécharge pas les tuiles d'une couche masquée.
  */
-function reliefOnly(map: maplibregl.Map) {
+const BASEMAP_KEEP = new Set([
+  "landcover",
+  "water",
+  "waterway",
+  "road-minor-casing",
+  "road-major-casing",
+  "road-minor",
+  "road-major",
+  "road-bridge-casing",
+  "road-bridge",
+  "place-labels",
+]);
+
+/** La forêt : seule couverture du sol affichée, un ton plus vert que le fond. */
+const FOREST_COLOR = mix(palette.charcoal, palette.sage, 0.22);
+
+function trimBasemap(map: maplibregl.Map) {
   for (const layer of map.getStyle().layers ?? []) {
-    if (OWN_LAYERS.has(layer.id) || layer.type === "background" || layer.type === "hillshade") continue;
-    if (map.getLayoutProperty(layer.id, "visibility") !== "none") map.setLayoutProperty(layer.id, "visibility", "none");
+    const keep = OWN_LAYERS.has(layer.id) || BASEMAP_KEEP.has(layer.id) || layer.type === "background" || layer.type === "hillshade";
+    const visibility = keep ? "visible" : "none";
+    if (map.getLayoutProperty(layer.id, "visibility") !== visibility) map.setLayoutProperty(layer.id, "visibility", visibility);
+  }
+  if (map.getLayer("landcover")) {
+    map.setFilter("landcover", ["==", ["get", "class"], "wood"]);
+    map.setPaintProperty("landcover", "fill-color", FOREST_COLOR);
+    map.setPaintProperty("landcover", "fill-opacity", 0.8);
   }
 }
 
@@ -239,7 +261,7 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
 
   const onStyle = () => {
     applySky(map);
-    reliefOnly(map);
+    trimBasemap(map);
     if (styleMode === "sdk-dev") tuneDevHillshade(map);
   };
   map.on("style.load", onStyle);
