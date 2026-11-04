@@ -5,12 +5,14 @@
  * explicite via `tbc()` (« [DATE À CONFIRMER] »). Ne jamais inventer de valeur.
  */
 export const event = {
-  /** Nom de travail du brief, en attendant le nom officiel. */
+  /** Nom de la série (nom de travail du brief). */
   name: "Backyard de Guérard",
   nameIsOfficial: false,
+  /** Nom de l'édition (trace officielle « 28 novembre, again and again.. »). */
+  edition: "Again and Again" as string | null,
   place: { commune: "Guérard", departement: "Seine-et-Marne (77)" },
-  /** Date du départ, ISO `YYYY-MM-DD`. */
-  date: null as string | null,
+  /** Date du départ, ISO `YYYY-MM-DD` (le 28 novembre, d'après le nom de la trace officielle). */
+  date: "2026-11-28" as string | null,
   /** Heure du premier départ, `HH:MM`, heure de Paris. */
   startTime: null as string | null,
   /** Tarif d'inscription, en euros. */

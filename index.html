@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#14281D" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>{{name}} — backyard ultra en forêt à {{commune}}</title>
+    <title>{{fullName}}, backyard ultra en forêt à {{commune}}</title>
     <meta
       name="description"
-      content="{{name}} : une boucle de {{loopKm3}} km en forêt, un départ toutes les heures, jusqu'au dernier coureur debout. {{place}}."
+      content="{{fullName}} : une boucle de {{loopKm3}} km en forêt, un départ toutes les heures, jusqu'au dernier coureur debout. {{date}}, {{place}}."
     />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
-    <meta property="og:title" content="{{name}} — l'étape qui ne finit jamais" />
+    <meta property="og:title" content="{{fullName}}" />
     <meta property="og:description" content="Une boucle de {{loopKm3}} km en forêt. Un départ toutes les heures. Le dernier debout gagne." />
     <meta property="og:url" content="{{siteUrl}}" />
     <meta property="og:image" content="{{ogImage}}" />
@@ -52,13 +52,13 @@
           <span class="tv-banner__name">{{name}}</span>
           <span class="tv-banner__stats">{{loopKm1}} km · D+ {{dPlus}} m</span>
         </div>
-        <p class="sr-only">{{name}} : boucle de {{loopKm3}} km, {{dPlus}} m de dénivelé positif.</p>
+        <p class="sr-only">{{fullName}} : boucle de {{loopKm3}} km, {{dPlus}} m de dénivelé positif.</p>
         <div id="dev-badges" class="tv flex flex-col items-start gap-1 text-xs sm:text-sm"></div>
       </div>
 
       <div class="hero__copy">
         <p class="tv hero__kicker">L'étape qui ne finit jamais</p>
-        <h1 class="tv hero__title">{{name}}</h1>
+        <h1 class="tv hero__title">{{headline}}</h1>
         <p class="hero__meta">
           <span>{{date}}</span>
           <span aria-hidden="true">·</span>
@@ -302,7 +302,7 @@
 
     <footer class="site-footer relative z-10">
       <div class="wrap site-footer__inner">
-        <p class="tv site-footer__name">{{name}}</p>
+        <p class="tv site-footer__name">{{fullName}}</p>
         <ul class="site-footer__list">{{html:footerCredits}}</ul>
         <p class="credits">
           Carte : <a class="link" href="https://mapmap.ai">MapMap</a> · Données ©

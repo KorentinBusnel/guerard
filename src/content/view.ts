@@ -45,6 +45,10 @@ export function daysToGo(now = new Date()): number | null {
 export function viewStrings(): Record<string, string> {
   return {
     name: event.name,
+    /** Titre principal : l'édition si elle est nommée, sinon la série. */
+    headline: event.edition ?? event.name,
+    /** « Again and Again — Backyard de Guérard » (titre de page, partage, pied de page). */
+    fullName: event.edition ? `${event.edition} — ${event.name}` : event.name,
     place: `${event.place.commune} · ${event.place.departement}`,
     commune: event.place.commune,
     date: dateLabel(),
