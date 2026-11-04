@@ -21,6 +21,17 @@
   --font-display: "Bebas Neue", Anton, "Arial Narrow", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-serif: Times, "Times New Roman", serif;
+  /* le titre « Again and Again » : Archivo Black étendu, droit et rapide (capitales seules,
+     instance statique 900/125 de la police variable, cf. README) */
+  --font-title: "Archivo Title", "Arial Black", Impact, sans-serif;
+}
+
+@font-face {
+  font-family: "Archivo Title";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("../assets/fonts/archivo-black-expanded-caps.woff2") format("woff2");
 }
 
 :root {
@@ -65,8 +76,7 @@
   }
   .display,
   .wordmark,
-  .heading,
-  .title-loop {
+  .heading {
     font-family: var(--font-display);
     font-weight: 400;
     line-height: 0.9;
@@ -153,14 +163,19 @@
   }
 
   /* ---------- Page 1 : accueil ---------- */
+  /* La page 1 laisse voir la scène 3D : transparente aux clics (on glisse sur la carte
+     pour la faire tourner), sauf ses liens et boutons. */
   .accueil {
     position: relative;
     z-index: 10;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
-    padding-bottom: 72px;
-    background: var(--color-carbon);
+    padding-bottom: 76px;
+    pointer-events: none;
+  }
+  .accueil :where(a, button) {
+    pointer-events: auto;
   }
   .topbar {
     display: flex;
@@ -176,94 +191,179 @@
     margin-bottom: 12px;
   }
 
-  /* Le titre : une ligne qui occupe toute la largeur ; ses lettres partent et
-     reviennent à chaque tour du coureur (classe `.is-again` posée par le JS). */
+  /* Le titre : capitales larges et grasses sur une ligne (deux sur mobile). Toutes les
+     quelques secondes, ses lettres filent vers la droite en traînée et reviennent par la
+     gauche, en vague (classe `.is-again` posée par le JS). */
   .title-loop {
     margin: 0;
-    /* une ligne qui remplit la largeur utile (≈ 5,25 em pour « AGAIN AND AGAIN » en Bebas) */
-    font-size: min(calc((100vw - 2 * var(--gutter)) / 5.3), 366px);
+    font-family: var(--font-title);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    /* une ligne qui remplit la largeur utile (≈ 11,75 em pour « AGAIN AND AGAIN ») */
+    font-size: min(calc((100vw - 2 * var(--gutter)) / 11.85), 200px);
     white-space: nowrap;
     color: var(--color-mint);
   }
+  @media (max-width: 640px) {
+    /* « AGAIN AND » / « AGAIN » : ≈ 7,3 em pour la première ligne */
+    .title-loop {
+      font-size: calc((100vw - 2 * var(--gutter)) / 7.45);
+      white-space: normal;
+    }
+  }
   .title-loop__word {
     display: inline-block;
-    overflow: hidden;
-    vertical-align: top;
-    /* la boîte de clip suit l'œil de la capitale */
-    line-height: 0.92;
-    padding-top: 0.04em;
   }
   .title-loop__letter {
     display: inline-block;
   }
   .is-again .title-loop__letter {
-    animation: letter-again 1100ms cubic-bezier(0.7, 0, 0.3, 1) calc(var(--i) * 45ms) both;
+    animation: letter-flash 620ms cubic-bezier(0.6, 0, 0.2, 1) calc(var(--i) * 28ms) both;
   }
-  @keyframes letter-again {
+  @keyframes letter-flash {
     0% {
-      transform: translateY(0);
+      transform: none;
+      filter: none;
+      opacity: 1;
     }
-    45% {
-      transform: translateY(-110%);
+    38% {
+      transform: translateX(0.9em) skewX(-24deg) scaleX(1.5);
+      filter: blur(0.06em);
+      opacity: 0;
     }
-    45.01% {
-      transform: translateY(110%);
+    38.01% {
+      transform: translateX(-0.9em) skewX(-24deg) scaleX(1.5);
+      filter: blur(0.06em);
+      opacity: 0;
     }
     100% {
-      transform: translateY(0);
+      transform: none;
+      filter: none;
+      opacity: 1;
     }
   }
 
-  .accueil__grid {
-    display: grid;
-    gap: 24px;
-    padding: 24px var(--gutter) 0;
-    flex: 1;
-    align-items: end;
-  }
-  @media (min-width: 900px) {
-    .accueil__grid {
-      grid-template-columns: 1fr minmax(360px, 30rem);
-      gap: 40px;
-    }
-  }
-  .accueil__left {
+  /* Bas de la page 1 : compte à rebours à gauche, commandes de la scène à droite */
+  .accueil__bottom {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
+    justify-content: space-between;
     gap: 24px 40px;
+    margin-top: auto;
+    padding: 24px var(--gutter) 0;
   }
-
-  .loop-art {
-    margin: 0;
+  .scene-ui {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    align-items: flex-start;
+    gap: 10px;
   }
-  .loop-art svg {
-    width: clamp(150px, 20vw, 260px);
-    height: auto;
-    overflow: visible;
+  @media (min-width: 900px) {
+    .scene-ui {
+      align-items: flex-end;
+      text-align: right;
+    }
   }
-  .loop-art__base {
-    fill: none;
-    stroke: var(--color-sage);
-    stroke-width: 0.6;
-    stroke-linejoin: round;
+  .scene-ui__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
-  .loop-art__trail {
-    fill: none;
-    stroke: var(--color-mint);
-    stroke-width: 1.1;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
+  .scene-ui__readout {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
   }
-  .loop-art__runner {
-    fill: var(--color-mint);
-    stroke: var(--color-carbon);
-    stroke-width: 0.6;
+  .scene-ui__hint {
+    margin: 0;
+    color: var(--color-sage);
+  }
+  @media (max-width: 640px) {
+    .accueil__bottom {
+      gap: 16px;
+    }
+    .scene-ui__hint {
+      display: none;
+    }
+  }
+  .btn-outline--small {
+    padding: 10px 14px;
+    background: rgb(22 27 19 / 0.55);
+  }
+  .btn-outline--square {
+    width: 44px;
+    padding: 0;
+    font-size: 18px;
+  }
+  .btn-outline--small:disabled:hover {
+    background: rgb(22 27 19 / 0.55);
+    color: var(--color-mint);
+  }
+  #map {
+    touch-action: pan-y;
+    cursor: grab;
+  }
+  #map.is-dragging {
+    cursor: grabbing;
+  }
+
+  /* Le coureur de la scène 3D (le style est sur l'enfant : MapLibre écrit l'opacité
+     d'occultation sur l'élément racine du marqueur). */
+  .runner-marker__dot {
+    position: relative;
+    display: block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-carbon);
+    border-radius: 50%;
+    background: var(--color-mint);
+  }
+  /* onde qui part du coureur, en boucle */
+  .runner-marker__dot::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--color-mint);
+    border-radius: 50%;
+    animation: runner-pulse 1600ms ease-out infinite;
+  }
+  @keyframes runner-pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    to {
+      transform: scale(3.2);
+      opacity: 0;
+    }
+  }
+
+  /* Point repéré sur la boucle (survol / toucher, ou depuis le profil de la page 2) */
+  .probe {
+    position: relative;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+  }
+  .probe__dot {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--color-mint);
+    border-radius: 50%;
+    background: var(--color-carbon);
+  }
+  .probe__label {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    transform: translateX(-50%);
+    padding: 6px 8px;
+    border: 1px solid var(--color-mint);
+    background: var(--color-carbon);
+    color: var(--color-mint);
+    white-space: nowrap;
   }
 
   .countdown {
@@ -302,6 +402,7 @@
     padding: 24px;
     background: var(--color-topo);
     color: var(--color-charcoal);
+    scroll-margin-top: 24px;
   }
   .inscription fieldset {
     margin: 0;
@@ -402,10 +503,13 @@
     color: color-mix(in oklab, var(--color-charcoal) 85%, var(--color-topo));
   }
 
+  /* Centré : les coins bas appartiennent à l'attribution (gauche) et au logo MapMap (droite) */
   .scroll-cue {
     position: absolute;
-    left: var(--gutter);
-    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 26px;
+    white-space: nowrap;
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -420,24 +524,44 @@
     stroke-width: 1;
   }
 
-  /* ---------- Page 2 : la boucle ---------- */
+  /* ---------- Page 2 : la boucle, l'inscription, le relief ---------- */
+  /* Transparente devant la scène 3D (fixe) : on la fait tourner en glissant entre les
+     blocs. Le bas reste libre pour l'attribution et le logo de la carte. */
   .boucle {
     position: relative;
     z-index: 10;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 40px;
     min-height: 100dvh;
-    /* transparent aux clics : l'attribution de la carte, dessous, reste cliquable */
+    padding: 48px 0 40px;
     pointer-events: none;
-    /* bas : on laisse libres les coins attribution / logo */
-    padding: var(--section-gap) var(--gutter) 34px;
   }
-  .boucle__top {
+  .boucle :where(a, button, form) {
+    pointer-events: auto;
+  }
+  .boucle__grid {
+    display: grid;
+    gap: 40px;
+    padding: 0 var(--gutter);
+  }
+  @media (min-width: 900px) {
+    .boucle__grid {
+      grid-template-columns: 1fr minmax(360px, 30rem);
+      align-items: start;
+    }
+  }
+  .boucle__info {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-width: 34rem;
+    gap: 16px;
+    min-width: 0;
+  }
+  .boucle__title {
+    margin: 0;
+    font-size: min(19vw, 150px);
+    white-space: nowrap;
+    color: var(--color-mint);
   }
   .boucle__stats {
     display: flex;
@@ -448,24 +572,144 @@
     list-style: none;
     color: var(--color-topo);
   }
-  .boucle__bottom {
+  @media (min-width: 900px) {
+    /* en ligne : la scène 3D garde de la place sous les chiffres */
+    .boucle__stats {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px 24px;
+    }
+  }
+
+  /* Le relief en grand, posé au bas de la page */
+  .relief {
+    margin: auto 0 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
   }
-  .profile {
-    height: clamp(56px, 9vh, 90px);
+  .relief__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 0 var(--gutter);
   }
-  .profile__svg {
+  .relief__caption {
+    color: var(--color-topo);
+  }
+  .relief__plot {
+    position: relative;
+    height: clamp(200px, 32vh, 380px);
+    /* survoler le profil place le point sur la boucle 3D (src/map/interact.ts) */
+    pointer-events: auto;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+  .relief__cursor {
+    position: absolute;
+    left: var(--x);
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--color-mint);
+    pointer-events: none;
+  }
+  .relief__cursor[hidden] {
+    display: none;
+  }
+  .relief__cursor-dot {
+    position: absolute;
+    left: -6px;
+    top: var(--y);
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    border: 2px solid var(--color-mint);
+    border-radius: 50%;
+    background: var(--color-carbon);
+  }
+  .relief__cursor.is-flipped .relief__cursor-label {
+    left: auto;
+    right: 10px;
+  }
+  .relief__cursor-label {
+    position: absolute;
+    left: 10px;
+    top: calc(var(--y) - 34px);
+    padding: 6px 8px;
+    border: 1px solid var(--color-mint);
+    background: var(--color-carbon);
+    color: var(--color-mint);
+    white-space: nowrap;
+  }
+  .relief__svg {
     display: block;
     width: 100%;
     height: 100%;
   }
-  .boucle__title {
-    margin: 0;
-    font-size: min(17vw, 366px);
+  .relief__marks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .relief__km {
+    position: absolute;
+    left: var(--x);
+    top: 0;
+    bottom: 0;
+    border-left: 1px dashed rgb(132 144 127 / 0.35);
+  }
+  .relief__km .caption {
+    position: absolute;
+    left: 6px;
+    bottom: 10px;
+    color: var(--color-topo);
+    white-space: nowrap;
+  }
+  .relief__label {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
     white-space: nowrap;
     color: var(--color-mint);
+    transform: translate(-50%, calc(-100% - 10px));
+  }
+  .relief__label--low {
+    color: var(--color-sage);
+  }
+  .relief__label--climb {
+    color: var(--color-topo);
+    transform: translate(-50%, calc(-100% - 34px));
+  }
+  .relief__end {
+    position: absolute;
+    top: 0;
+    color: var(--color-sage);
+  }
+  .relief__end--start {
+    left: var(--gutter);
+  }
+  .relief__end--finish {
+    right: var(--gutter);
+  }
+  @media (max-width: 640px) {
+    /* la scène passe derrière le relief : un voile pour que le profil se lise */
+    .relief {
+      padding-top: 16px;
+      background: rgb(22 27 19 / 0.6);
+    }
+    /* trop serré pour tout dire : les montées restent en légende de la page */
+    .relief__label--climb,
+    .relief__label--low {
+      display: none;
+    }
+    .relief__km:nth-child(even) .caption {
+      display: none;
+    }
   }
 
   /* ---------- Pied de page : bande claire ---------- */
@@ -516,11 +760,19 @@
     background: var(--color-carbon);
     transition: opacity 900ms ease;
   }
+  /* même place que la boucle de la scène 3D (cadrage de src/map/camera.ts) */
   .map-poster svg {
     position: absolute;
-    inset: 12% 8% 30%;
-    width: 84%;
-    height: 58%;
+    inset: 36% 4% 10% 30%;
+    width: 66%;
+    height: 54%;
+  }
+  @media (max-width: 640px) {
+    .map-poster svg {
+      inset: 34% 4% 31%;
+      width: 92%;
+      height: 35%;
+    }
   }
   .map-poster__line {
     fill: none;
@@ -555,31 +807,44 @@
     inset: 0;
     z-index: 1;
     pointer-events: none;
+    /* haut : le titre ; bas : le compte à rebours et les commandes */
     background:
-      linear-gradient(180deg, rgb(22 27 19 / 0.85) 0%, rgb(22 27 19 / 0) 30%),
-      linear-gradient(0deg, rgb(22 27 19 / 0.9) 0%, rgb(22 27 19 / 0) 42%);
+      linear-gradient(180deg, rgb(22 27 19 / 0.9) 0%, rgb(22 27 19 / 0.55) 28%, rgb(22 27 19 / 0) 44%),
+      linear-gradient(0deg, rgb(22 27 19 / 0.92) 0%, rgb(22 27 19 / 0) 30%);
+  }
+  .map-scrim::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgb(22 27 19 / 0.7) 0%, rgb(22 27 19 / 0.55) 34%, rgb(22 27 19 / 0) 50%);
+    opacity: var(--page2, 0);
   }
   @media (max-width: 640px) {
     .map-scrim {
       background:
-        linear-gradient(180deg, rgb(22 27 19 / 0.92) 0%, rgb(22 27 19 / 0.75) 22%, rgb(22 27 19 / 0) 38%),
-        linear-gradient(0deg, rgb(22 27 19 / 0.9) 0%, rgb(22 27 19 / 0) 36%);
+        linear-gradient(180deg, rgb(22 27 19 / 0.92) 0%, rgb(22 27 19 / 0.7) 26%, rgb(22 27 19 / 0) 36%),
+        linear-gradient(0deg, rgb(22 27 19 / 0.96) 0%, rgb(22 27 19 / 0.88) 26%, rgb(22 27 19 / 0) 38%);
     }
   }
 
-  /* Mode capture (images OG / fallback, ?capture=og|fallback) */
-  .capture .accueil,
+  /* Mode capture (images OG / fallback, ?capture=og|fallback) : la page 1 seule ;
+     l'image de partage garde le titre, le fond sans WebGL n'a que la scène. */
+  .capture main,
   .capture .site-footer,
-  .capture .skip-link {
+  .capture .skip-link,
+  .capture .accueil__bottom,
+  .capture .scroll-cue,
+  .capture .topbar .btn-outline {
     display: none;
   }
-  .capture-fallback .boucle,
+  .capture-fallback .accueil,
   .capture-fallback .map-scrim {
     visibility: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .is-again .title-loop__letter {
+    .is-again .title-loop__letter,
+    .runner-marker__dot::after {
       animation: none;
     }
     .btn-outline,

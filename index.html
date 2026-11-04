@@ -24,10 +24,10 @@
   <body>
     <a href="#inscription" class="skip-link">Aller à l'inscription</a>
 
-    <!-- Carte fixe en fond : visible à travers la page 2 (la page 1 est opaque).
+    <!-- Scène 3D en fond fixe des deux pages (transparentes devant elle).
          Position et hauteur en style inline : les utilitaires Tailwind (cascade layer)
          ne doivent pas pouvoir perdre contre .maplibregl-map → hauteur 0. -->
-    <div id="map-layer" style="position: fixed; inset: 0; height: 100dvh; z-index: 0">
+    <div id="map-layer" style="position: fixed; inset: 0; height: 100dvh; z-index: 0; overflow: hidden">
       <div id="map-poster" class="map-poster" aria-hidden="true">
         <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
           <path class="map-poster__line" d="{{svg:route}}" />
@@ -36,7 +36,7 @@
       <div
         id="map"
         role="region"
-        aria-label="Carte 3D de la boucle en forêt autour de {{commune}}"
+        aria-label="La boucle de {{loopKm3}} km en 3D sur le relief autour de {{commune}}"
         style="position: absolute; inset: 0; width: 100%; height: 100%"
       ></div>
       <!-- Voile de lisibilité : au-dessus du canevas, SOUS les coins de contrôle MapLibre
@@ -44,7 +44,7 @@
       <div class="map-scrim" aria-hidden="true"></div>
     </div>
 
-    <!-- Page 1 : le titre, le compte à rebours, l'inscription -->
+    <!-- Page 1 : le titre et le compte à rebours, devant la boucle en 3D -->
     <header id="accueil" class="accueil">
       <nav class="topbar" aria-label="Accueil">
         <p class="wordmark">{{name}}</p>
@@ -59,88 +59,98 @@
         </h1>
       </div>
 
-      <div class="accueil__grid">
-        <div class="accueil__left">
-          <figure class="loop-art" aria-hidden="true">
-            <svg viewBox="0 0 100 100">
-              <path class="loop-art__base" d="{{svg:route}}" />
-              <path class="loop-art__trail" d="{{svg:route}}" pathLength="1" data-loop-trail />
-              <circle class="loop-art__runner" r="1.8" data-loop-runner />
-            </svg>
-            <figcaption class="caption"><span data-yard>Yard 01</span> · {{loopKm3}} km, et on recommence</figcaption>
-          </figure>
-
-          <div class="countdown">
-            <p class="caption" id="countdown-label">Avant le premier départ</p>
-            <p class="countdown__digits" aria-labelledby="countdown-label" data-countdown>
-              <span class="countdown__unit"><span data-cd="d">--</span><span class="caption">jours</span></span>
-              <span class="countdown__unit"><span data-cd="h">--</span><span class="caption">h</span></span>
-              <span class="countdown__unit"><span data-cd="m">--</span><span class="caption">min</span></span>
-              <span class="countdown__unit"><span data-cd="s">--</span><span class="caption">s</span></span>
-            </p>
-            <p class="caption countdown__note">Premier départ : {{startTime}}</p>
-          </div>
+      <div class="accueil__bottom">
+        <div class="countdown">
+          <p class="caption" id="countdown-label">Avant le premier départ</p>
+          <p class="countdown__digits" aria-labelledby="countdown-label" data-countdown>
+            <span class="countdown__unit"><span data-cd="d">--</span><span class="caption">jours</span></span>
+            <span class="countdown__unit"><span data-cd="h">--</span><span class="caption">h</span></span>
+            <span class="countdown__unit"><span data-cd="m">--</span><span class="caption">min</span></span>
+            <span class="countdown__unit"><span data-cd="s">--</span><span class="caption">s</span></span>
+          </p>
+          <p class="caption countdown__note">Premier départ : {{startTime}} · {{loopKm3}} km toutes les {{loopMinutes}} min</p>
         </div>
 
-        <form id="inscription" class="inscription" data-inscription>
-          <h2 class="heading">S'inscrire</h2>
-
-          <fieldset class="formule">
-            <legend class="caption">Formule</legend>
-            <label class="choice"><input type="radio" name="formule" value="solo" checked /><span>Seul</span></label>
-            <label class="choice"><input type="radio" name="formule" value="duo" /><span>Avec un ami</span></label>
-          </fieldset>
-
-          <fieldset class="person">
-            <legend class="caption">Toi</legend>
-            <label class="field"><span class="caption">Nom et prénom</span><input name="nom" autocomplete="name" required /></label>
-            <label class="field"><span class="caption">E-mail</span><input name="email" type="email" autocomplete="email" required /></label>
-          </fieldset>
-
-          <fieldset class="person" data-friend hidden disabled>
-            <legend class="caption">Ton ami·e</legend>
-            <label class="field"><span class="caption">Nom et prénom</span><input name="ami_nom" autocomplete="off" required /></label>
-            <label class="field"><span class="caption">E-mail</span><input name="ami_email" type="email" autocomplete="off" required /></label>
-          </fieldset>
-
-          <label class="consent">
-            <input type="checkbox" name="consentement" required />
-            <span>J'accepte que ces informations servent uniquement à gérer l'inscription ({{html:legalLink}}).</span>
-          </label>
-
-          <!-- Pot de miel anti-spam : invisible pour les humains -->
-          <div class="hp" aria-hidden="true">
-            <label>Ne pas remplir <input name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+        <div class="scene-ui">
+          <p class="caption scene-ui__readout" aria-hidden="true" data-readout hidden></p>
+          <div class="scene-ui__buttons">
+            <button type="button" class="btn-outline btn-outline--small" aria-pressed="false" data-pause>Pause</button>
+            <button type="button" class="btn-outline btn-outline--small" data-view hidden>Vue de dessus</button>
+            <button type="button" class="btn-outline btn-outline--small btn-outline--square" aria-label="Éloigner" data-zoom="out" hidden>−</button>
+            <button type="button" class="btn-outline btn-outline--small btn-outline--square" aria-label="Rapprocher" data-zoom="in" hidden>+</button>
           </div>
-
-          <button type="submit" class="btn-outline btn-outline--ink" data-submit>Envoyer l'inscription</button>
-          <p class="caption inscription__status" role="status" data-status></p>
-          <p class="caption inscription__meta">Tarif : {{price}} · Dossards : {{bibs}}</p>
-        </form>
+          <p class="caption scene-ui__hint" data-hint hidden>Glisser pour tourner · Ctrl + molette pour zoomer · Survoler le tracé</p>
+        </div>
       </div>
 
       <a class="scroll-cue" href="#boucle">
-        <span class="caption">La boucle</span>
+        <span class="caption">Le relief · S'inscrire</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" /><path d="M8 10.5l4 4 4-4" /></svg>
       </a>
     </header>
 
-    <!-- Page 2 : la boucle GPX sur la carte -->
+    <!-- Page 2 : la boucle en chiffres, l'inscription, et le relief en grand au bas,
+         devant la même scène 3D -->
     <main>
       <section id="boucle" class="boucle" aria-labelledby="boucle-title">
-        <div class="boucle__top">
-          <p class="caption">La boucle · {{place}}</p>
-          <ul class="caption boucle__stats">
-            <li>D+ {{dPlus}} m</li>
-            <li>Altitude {{eleMin}}–{{eleMax}} m</li>
-            <li>{{climbsCount}} montées : {{climbs}}</li>
-            <li>Un départ toutes les {{loopMinutes}} min, jusqu'au dernier debout</li>
-          </ul>
+        <div class="boucle__grid">
+          <div class="boucle__info">
+            <p class="caption">La boucle · {{place}}</p>
+            <h2 id="boucle-title" class="display boucle__title">{{loopKm3}} km</h2>
+            <ul class="caption boucle__stats">
+              <li>D+ {{dPlus}} m</li>
+              <li>Altitude {{eleMin}}–{{eleMax}} m</li>
+              <li>{{climbsCount}} montées : {{climbs}}</li>
+              <li>Un départ toutes les {{loopMinutes}} min, jusqu'au dernier debout</li>
+            </ul>
+          </div>
+
+          <form id="inscription" class="inscription" data-inscription>
+            <h2 class="heading">S'inscrire</h2>
+
+            <fieldset class="formule">
+              <legend class="caption">Formule</legend>
+              <label class="choice"><input type="radio" name="formule" value="solo" checked /><span>Seul</span></label>
+              <label class="choice"><input type="radio" name="formule" value="duo" /><span>Avec un ami</span></label>
+            </fieldset>
+
+            <fieldset class="person">
+              <legend class="caption">Toi</legend>
+              <label class="field"><span class="caption">Nom et prénom</span><input name="nom" autocomplete="name" required /></label>
+              <label class="field"><span class="caption">E-mail</span><input name="email" type="email" autocomplete="email" required /></label>
+            </fieldset>
+
+            <fieldset class="person" data-friend hidden disabled>
+              <legend class="caption">Ton ami·e</legend>
+              <label class="field"><span class="caption">Nom et prénom</span><input name="ami_nom" autocomplete="off" required /></label>
+              <label class="field"><span class="caption">E-mail</span><input name="ami_email" type="email" autocomplete="off" required /></label>
+            </fieldset>
+
+            <label class="consent">
+              <input type="checkbox" name="consentement" required />
+              <span>J'accepte que ces informations servent uniquement à gérer l'inscription ({{html:legalLink}}).</span>
+            </label>
+
+            <!-- Pot de miel anti-spam : invisible pour les humains -->
+            <div class="hp" aria-hidden="true">
+              <label>Ne pas remplir <input name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+            </div>
+
+            <button type="submit" class="btn-outline btn-outline--ink" data-submit>Envoyer l'inscription</button>
+            <p class="caption inscription__status" role="status" data-status></p>
+            <p class="caption inscription__meta">Tarif : {{price}} · Dossards : {{bibs}}</p>
+          </form>
         </div>
-        <div class="boucle__bottom">
-          <div class="profile">{{html:miniProfile}}</div>
-          <h2 id="boucle-title" class="display boucle__title">{{loopKm3}} km</h2>
-        </div>
+
+        <figure class="relief" aria-labelledby="relief-caption">
+          <div class="relief__head">
+            <figcaption id="relief-caption" class="caption relief__caption">
+              Le relief · de {{eleMin}} à {{eleMax}} m · D+ {{dPlus}} m par tour
+            </figcaption>
+            <button type="button" class="btn-outline btn-outline--small" aria-pressed="false" data-pause>Pause</button>
+          </div>
+          <div class="relief__plot">{{html:reliefProfile}}</div>
+        </figure>
       </section>
     </main>
 

@@ -2,8 +2,9 @@ import "@fontsource/bebas-neue/400.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/700.css";
 import "./styles/app.css";
-import { initCountdown, initLoopArt } from "./sections/hero";
+import { initCountdown, initTitleLoop } from "./sections/hero";
 import { initInscription } from "./sections/inscription";
+import type { Scene } from "./map/boot";
 
 /** `?capture=og|fallback` : vue figée pour générer les images statiques (scripts/capture-images.mjs). */
 const capture = new URLSearchParams(location.search).get("capture") as "og" | "fallback" | null;
@@ -12,7 +13,7 @@ const mobile = window.matchMedia("(max-width: 640px)").matches;
 if (capture) document.documentElement.classList.add("capture", `capture-${capture}`);
 document.documentElement.classList.toggle("reduced-motion", reducedMotion);
 
-/** Sans WebGL 2 (exigé par MapLibre 6) : image statique de la carte sous l'affiche du tracé. */
+/** Sans WebGL 2 (exigé par MapLibre 6) : image statique de la scène derrière les pages. */
 function showMapFallback() {
   document.documentElement.classList.add("no-webgl");
   const poster = document.getElementById("map-poster")!;
@@ -27,25 +28,74 @@ function showMapFallback() {
 }
 
 initCountdown();
-initLoopArt({ reducedMotion });
+const title = initTitleLoop({ reducedMotion });
 initInscription();
+
+// ---------- Commandes de la scène : Pause (tout ce qui bouge), vue de dessus / 3D ----------
+const pauseBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-pause]")];
+const viewBtn = document.querySelector<HTMLButtonElement>("[data-view]")!;
+let scene: Scene | null = null;
+let userPaused = false;
+for (const btn of pauseBtns) {
+  if (reducedMotion) btn.hidden = true;
+  btn.addEventListener("click", () => {
+    userPaused = !userPaused;
+    for (const b of pauseBtns) {
+      b.setAttribute("aria-pressed", String(userPaused));
+      b.textContent = userPaused ? "Lecture" : "Pause";
+    }
+    title.setPaused("user", userPaused);
+    scene?.setUserPaused(userPaused);
+  });
+}
+const zoomBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-zoom]")];
+const onZoomChange = (canIn: boolean, canOut: boolean) => {
+  for (const b of zoomBtns) b.disabled = b.dataset.zoom === "in" ? !canIn : !canOut;
+};
+for (const b of zoomBtns) b.addEventListener("click", () => scene?.zoomBy(b.dataset.zoom === "in" ? 0.6 : -0.6));
+viewBtn.addEventListener("click", () => {
+  if (!scene) return;
+  const topDown = scene.toggleTopDown();
+  viewBtn.textContent = topDown ? "Vue 3D" : "Vue de dessus";
+});
+
+// Voile de la page 2 : plus sombre en bas à mesure qu'on y arrive (légendes du relief
+// lisibles sur la scène). Variable CSS lue par .map-scrim::after.
+const mapLayer = document.getElementById("map-layer")!;
+let scrimRaf = 0;
+const updateScrim = () => {
+  scrimRaf = 0;
+  mapLayer.style.setProperty("--page2", String(Math.min(Math.max(window.scrollY / window.innerHeight, 0), 1)));
+};
+window.addEventListener("scroll", () => (scrimRaf ||= requestAnimationFrame(updateScrim)), { passive: true });
+updateScrim();
 
 // Test d'API sans créer de contexte (créer un contexte WebGL coûte cher au chargement) ;
 // un vrai échec à la création de la carte bascule aussi sur l'image statique.
 const webgl = typeof WebGL2RenderingContext !== "undefined";
-const boucle = document.getElementById("boucle")!;
+const pages = [document.getElementById("accueil")!, document.getElementById("boucle")!];
 
 if (!webgl) {
   showMapFallback();
 } else {
-  // La carte (MapLibre + SDK, ~1 Mo, chunk séparé) ne sert qu'à la page 2 : on la charge
-  // quand on s'en approche, pas au premier affichage.
+  // La scène 3D (MapLibre + SDK, ~1 Mo, chunk séparé) démarre après le premier affichage :
+  // à la première interaction, ou peu après le chargement. Le titre et le compte à rebours
+  // s'affichent tout de suite, devant le tracé dessiné en SVG.
+  const INTERACTIONS = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart", "wheel"] as const;
   let started = false;
   const startMap = () => {
     if (started) return;
     started = true;
+    for (const type of INTERACTIONS) window.removeEventListener(type, startMap);
     import("./map/boot")
-      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, page: boucle }))
+      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, pages, userPaused, onZoomChange }))
+      .then((s) => {
+        scene = s;
+        viewBtn.hidden = false;
+        for (const b of zoomBtns) b.hidden = false;
+        document.querySelector<HTMLElement>("[data-hint]")!.hidden = false;
+        document.querySelector<HTMLElement>("[data-readout]")!.hidden = reducedMotion;
+      })
       .catch((err) => {
         console.error("[guerard] carte indisponible", err);
         showMapFallback();
@@ -53,20 +103,9 @@ if (!webgl) {
   };
   if (capture) startMap();
   else {
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          io.disconnect();
-          startMap();
-        }
-      },
-      { rootMargin: "60% 0px" },
-    );
-    // Sur grand écran la page 2 commence juste sous la ligne de flottaison : l'observateur
-    // seul lancerait la carte au chargement. On attend donc le premier défilement (ou une
-    // arrivée déjà défilée / sur #boucle) avant de guetter son approche.
-    const arm = () => io.observe(boucle);
-    if (window.scrollY > 0 || location.hash) arm();
-    else window.addEventListener("scroll", arm, { once: true, passive: true });
+    for (const type of INTERACTIONS) window.addEventListener(type, startMap, { once: true, passive: true });
+    const idle = () => window.setTimeout(startMap, 3500);
+    if (document.readyState === "complete") idle();
+    else window.addEventListener("load", idle, { once: true });
   }
 }

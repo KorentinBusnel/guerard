@@ -9,7 +9,7 @@
 import { palette } from "../styles/tokens";
 
 /** Exagération du relief : le relief de Guérard est doux (≈ 50–150 m). */
-export const TERRAIN_EXAGGERATION = { desktop: 1.6, mobile: 1.2 } as const;
+export const TERRAIN_EXAGGERATION = { desktop: 2.2, mobile: 1.8 } as const;
 
 export const HILLSHADE = { intensity: 0.55, direction: 335 } as const;
 
@@ -49,9 +49,6 @@ export const forestTheme = {
   // Les cartouches routiers sont colorés : la menthe doit rester la seule couleur à l'écran.
   territories: { planet: { road_shields: { visible: false } } },
 } as const;
-
-/** Couches de cartouches routiers (même règle, appliquée aussi au runtime). */
-export const ROAD_SHIELD_LAYERS = ["road-shields", "road-shields-street"] as const;
 
 export type ForestTheme = typeof forestTheme;
 

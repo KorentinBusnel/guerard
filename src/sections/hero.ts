@@ -1,66 +1,45 @@
 /**
- * Page 1 : le coureur fait le tour de la boucle (silhouette du vrai GPX) ; à chaque retour
- * au départ, le compteur de yards avance et les lettres du titre partent et reviennent.
- * Et le compte à rebours jusqu'au premier départ.
+ * Page 1 : les lettres du titre partent et reviennent, encore et encore ; et le compte à
+ * rebours jusqu'au premier départ. La boucle elle-même tourne en 3D derrière (src/map).
  */
 import { startDate } from "../content/date";
 import { pad2 } from "../lib/format";
 
-/** Durée d'un tour d'animation (une « heure » de backyard, en accéléré). */
-const LAP_MS = 7000;
+/** Intervalle entre deux passages du titre. */
+const AGAIN_MS = 4000;
 
-export function initLoopArt({ reducedMotion }: { reducedMotion: boolean }) {
-  const trail = document.querySelector<SVGPathElement>("[data-loop-trail]");
-  const runner = document.querySelector<SVGCircleElement>("[data-loop-runner]");
-  const yardEl = document.querySelector<HTMLElement>("[data-yard]");
+export interface TitleLoop {
+  /** Arrêt (bouton Pause, page 1 hors écran, onglet caché). */
+  setPaused(reason: string, paused: boolean): void;
+}
+
+export function initTitleLoop({ reducedMotion }: { reducedMotion: boolean }): TitleLoop {
   const title = document.querySelector<HTMLElement>("[data-title-loop]");
-  if (!trail || !runner || !yardEl || !title) return;
-
-  const length = trail.getTotalLength();
-  const place = (t: number) => {
-    const pt = trail.getPointAtLength(t * length);
-    runner.setAttribute("cx", pt.x.toFixed(2));
-    runner.setAttribute("cy", pt.y.toFixed(2));
-    trail.style.strokeDashoffset = String(1 - t);
-  };
-
-  if (reducedMotion) {
-    // Pas d'animation : la boucle entière, le coureur au départ.
-    place(0);
-    trail.style.strokeDashoffset = "0";
-    return;
-  }
-
-  let yard = 1;
-  let raf = 0;
-  let t0 = 0;
-  let lastLap = 0;
+  const pausedBy = new Set<string>();
+  let timer = 0;
   const again = () => {
-    yard += 1;
-    yardEl.textContent = `Yard ${pad2(yard)}`;
+    if (!title) return;
     // relance l'animation CSS des lettres
     title.classList.remove("is-again");
     void title.offsetWidth;
     title.classList.add("is-again");
   };
-  const tick = (now: number) => {
-    if (!t0) t0 = now - lastLap * LAP_MS;
-    const elapsed = now - t0;
-    const lap = Math.floor(elapsed / LAP_MS);
-    if (lap > lastLap) {
-      lastLap = lap;
-      again();
-    }
-    place((elapsed % LAP_MS) / LAP_MS);
-    raf = requestAnimationFrame(tick);
+  const sync = () => {
+    window.clearInterval(timer);
+    timer = 0;
+    if (!reducedMotion && title && pausedBy.size === 0) timer = window.setInterval(again, AGAIN_MS);
   };
-  place(0);
-  // Seulement quand la page 1 est à l'écran (et l'onglet visible).
-  new IntersectionObserver(([entry]) => {
-    cancelAnimationFrame(raf);
-    t0 = 0;
-    if (entry.isIntersecting) raf = requestAnimationFrame(tick);
-  }).observe(trail.ownerSVGElement!);
+  const setPaused = (reason: string, paused: boolean) => {
+    if (paused) pausedBy.add(reason);
+    else pausedBy.delete(reason);
+    sync();
+  };
+  if (title) {
+    new IntersectionObserver(([entry]) => setPaused("offscreen", !entry.isIntersecting)).observe(title);
+    document.addEventListener("visibilitychange", () => setPaused("hidden", document.hidden));
+  }
+  sync();
+  return { setPaused };
 }
 
 export function initCountdown() {

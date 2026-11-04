@@ -3,10 +3,15 @@
 Landing de la backyard ultra de Guérard (77), édition « Again and Again », le
 28 novembre 2026. Deux pages :
 
-1. **Accueil** : le titre qui part et revient en boucle, le compte à rebours jusqu'au
-   premier départ, l'inscription **seul ou avec un ami**.
-2. **La boucle** (en scrollant) : le tracé GPX officiel sur une carte 3D MapMap en orbite
-   lente, avec D+, altitudes, montées et profil.
+1. **Accueil** : le titre (ses lettres filent et reviennent toutes les 4 s) et le compte
+   à rebours, devant la **boucle GPX en 3D** : le tracé en grand sur le relief, la
+   forêt, les rivières, les routes et les villages, un coureur qui en fait le tour
+   (« Yard 01, 02… »), en orbite lente. Le dénivelé est au bas de la page 2. On la fait tourner en la glissant ; boutons
+   Pause et Vue de dessus / Vue 3D.
+2. **La boucle et l'inscription** (en scrollant, devant la même scène 3D, que la caméra
+   recadre dans l'espace libre) : distance, D+, altitudes, montées ; l'inscription
+   **seul ou avec un ami** ; au bas, le **relief en grand** (profil d'altitude avec
+   kilomètres, montées et points haut et bas).
 
 **Stack** : Vite + TypeScript vanilla, Tailwind v4, carte MapMap (`@mapmap/maps` sur
 MapLibre GL 6). Pas de framework : une page courte, l'essentiel est impératif (rAF,
@@ -22,7 +27,8 @@ npm run preview         # sert dist/
 ```
 
 En local, la carte fonctionne **sans clé** (les tuiles sans clé servent localhost).
-En production, une clé navigateur est obligatoire (sinon tuiles 403 et carte vide).
+En production, sans `VITE_MAPMAP_KEY`, la scène n'affiche que le relief (ni forêt, ni
+routes, ni rivières, ni villages).
 
 ## Variables d'environnement
 
@@ -31,7 +37,7 @@ Copier `.env.example` en `.env` (en prod : variables du projet Vercel).
 | Variable | Où | Rôle |
 |---|---|---|
 | `VITE_INSCRIPTION_ENDPOINT` | navigateur | Adresse qui reçoit les inscriptions (ci-dessous). Vide → bouton désactivé. |
-| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap restreinte à l'origine du site. **Obligatoire en prod.** |
+| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap restreinte à l'origine du site. **Nécessaire en prod** pour la forêt, les routes, les rivières et les villages (sans elle : relief seul). |
 | `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
 | `SITE_URL` | build | URL publique (rend `og:image` absolue). |
 | `MAPMAP_API_KEY` | scripts uniquement | `prepare:route`, `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
@@ -88,39 +94,72 @@ carte :
   neutres Carbon Ink `#161b13`, Forest Charcoal `#2d3329`, Sage Stone `#84907f`,
   Topo Gray `#dde2e4`. Tokens dans `src/styles/app.css` (`@theme`) et
   `src/styles/tokens.ts` (carte, SVG).
-- **Typo** : Bebas Neue (titres, interligne 0,9), IBM Plex Mono en capitales 10/12/16 px
-  (légendes, boutons, formulaire), Times pour les liens de texte.
+- **Typo** : le titre « Again and Again » en Archivo Black étendu (capitales larges,
+  droites, « rapides ») ; Bebas Neue pour le nom, les chiffres et les titres
+  (interligne 0,9) ; IBM Plex Mono en capitales 12–16 px (légendes, boutons,
+  formulaire) ; Times pour les liens de texte. La police du titre est une instance
+  statique 900/125 de la police variable Archivo réduite aux capitales (5 Ko,
+  `src/assets/fonts/`, licence OFL jointe), faite avec fonttools :
+  `fonttools varLib.instancer archivo-latin-wdth-normal.woff2 wght=900 wdth=125` puis
+  `pyftsubset … --unicodes="U+0020-005A,U+00C0-00DE,U+0152,U+2019,U+2013,U+2014,U+00B7" --flavor=woff2`
+  (source : `@fontsource-variable/archivo`, en dépendance de dev).
 - Angles droits, aucune ombre, boutons en contour 1 px, gouttière 24/40 px.
-- **Titre en boucle** : chaque lettre sort par le haut et revient par le bas, en vague,
-  à chaque tour du coureur sur la petite boucle (`src/sections/hero.ts`, 7 s par tour,
-  compteur « Yard NN »).
+- **Titre en boucle** : toutes les 4 s, les lettres filent vers la droite en traînée
+  floue et reviennent par la gauche, en vague (`src/sections/hero.ts`).
 
-## Carte
+## Scène 3D (fond des deux pages)
 
-- Calque fixe (`#map-layer`) sous la page 2 ; la page 1 est opaque et la recouvre.
-- MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé au premier défilement, quand on
-  approche de la page 2 : aucun contexte WebGL n'est créé au chargement (sur grand écran
-  la page 2 commence juste sous la ligne de flottaison, d'où l'attente du défilement).
-  L'orbite tourne seulement quand la page 2 est à l'écran ; le tracé se dessine à la
-  première arrivée.
+- Calque `#map-layer` fixe, sous les deux pages (transparentes) ; le pied de page,
+  opaque, le recouvre.
+- **Boucle** : ligne menthe sur un halo flou, dessinée en 4 s à l'arrivée de la scène ;
+  le coureur (`src/map/runner.ts`, un tour en 26 s, position par `src/map/track.ts`) en
+  fait le tour, encore et encore, suivi d'une traînée lumineuse (`line-gradient`
+  recalculé à chaque image).
+- **Rendu HD** : anticrénelage du canevas (`canvasContextAttributes.antialias`),
+  densité de pixels au moins 1,5 sur ordinateur (suréchantillonnage des écrans
+  standard, plafonnée à 2 ; 2,5 sur mobile) ; ombrage du relief à deux lumières
+  (`hillshade-method: multidirectional`).
+- **Interactions** (`src/map/interact.ts`) : glisser pour tourner (et incliner à la
+  souris), avec inertie ; deux doigts pour zoomer et pivoter ; Ctrl / ⌘ + molette (ou
+  pincement du pavé tactile) pour zoomer, la molette seule faisant défiler la page ;
+  boutons − / + ; double-clic pour revenir au cadrage. Survoler (ou toucher) le tracé
+  affiche le kilomètre et l'altitude du point, repérés aussi sur le grand profil de la
+  page 2 ; survoler le profil place le point sur la boucle 3D.
+- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, puis
+  (grand écran) à gauche du formulaire de la page 2, au fil du défilement ; orbite
+  lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
+  au défilement), transition vue de dessus / 3D. Relief exagéré ×2,2 (×1,8 mobile).
+- MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé à la première interaction ou
+  3,5 s après le chargement ; avant, le tracé est dessiné en SVG à la même place.
+  Tout s'arrête quand aucune des deux pages n'est à l'écran ou que l'onglet est caché.
+- **Fond épuré** (`trimBasemap`, `src/map/forestMap.ts`) : sur le relief ombré, on ne
+  garde que la forêt (seule couverture du sol affichée), l'eau et les rivières, les
+  routes (sans chemins ni rail) et les noms de villes et villages ; bâti, points
+  d'intérêt, noms de rues, cartouches et limites sont masqués (leurs tuiles ne sont pas
+  téléchargées).
 - Thème dans `src/map/theme.ts`. Sans `VITE_MAPMAP_STYLE_URL`, repli sur le compilateur
   réduit du SDK (qui refuse le bloc `terrain`) : relief et ombrage demandés au SDK.
+- Sans clé (`VITE_MAPMAP_KEY`) hors localhost, le fond vectoriel est refusé (403) :
+  forêt, routes, rivières et villages disparaissent, il reste le relief et la boucle.
 - Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
-  (voile de lisibilité placé sous les coins de contrôle).
+  (voile de lisibilité placé sous les coins de contrôle, bas des pages laissé libre).
 
 ## Accessibilité, mouvement, fallback
 
-- `prefers-reduced-motion` : titre et petite boucle figés (tracé complet), carte fixe
-  sans orbite, tracé affiché d'emblée.
-- Sans WebGL 2 ou si MapLibre échoue : image statique de la carte (`carte-fallback.webp`).
+- Bouton **Pause** (page 1 et page 2) : arrête tout ce qui bouge (titre, orbite,
+  coureur).
+- `prefers-reduced-motion` : titre figé, scène fixe sans orbite ni coureur, boucle
+  dessinée d'emblée.
+- Sans WebGL 2 ou si MapLibre échoue : image statique de la scène (`carte-fallback.webp`).
 - Titre animé en `aria-hidden`, doublé d'un texte pour les lecteurs d'écran ; compte à
-  rebours étiqueté ; statut du formulaire en `role="status"`.
+  rebours étiqueté ; relief décrit par sa légende ; statut du formulaire en
+  `role="status"`.
 
 ## Lighthouse (build prod, Chromium headless sans GPU)
 
 Mobile (3 passes) et desktop : performance 100, accessibilité 100, bonnes pratiques 100,
-SEO 100 (TBT 0 ms, CLS 0). Les deux polices du premier écran sont préchargées au build
-(`vite.config.ts`) : sans cela leur arrivée décalait le formulaire (CLS 0,28).
+SEO 100 (TBT 0 ms, CLS 0). Les trois polices du premier écran sont préchargées au build
+(`vite.config.ts`) : sans cela leur arrivée décalait la mise en page (CLS 0,28).
 
 ## Pièges traités
 
@@ -132,6 +171,8 @@ SEO 100 (TBT 0 ms, CLS 0). Les deux polices du premier écran sont préchargées
 - **`cameraForBounds`** : padding remis à zéro avant le calcul (sinon il s'additionne au
   padding posé sur la carte et dézoome).
 - **Double ombrage** : avec le style hébergé, `hillshade: false` côté SDK.
+- **Orbite et transitions** : le `jumpTo` de l'orbite couperait un `easeTo` à l'image
+  suivante ; l'inclinaison (vue de dessus / 3D) est donc animée dans la même boucle.
 
 ## Outils agents
 
