@@ -1,7 +1,6 @@
 import "@fontsource/bebas-neue/400.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/700.css";
-import "@fontsource/instrument-serif/400-italic.css";
 import "./styles/app.css";
 import { initCountdown, initTitleLoop } from "./sections/hero";
 import { initInscription } from "./sections/inscription";
@@ -14,7 +13,7 @@ const mobile = window.matchMedia("(max-width: 640px)").matches;
 if (capture) document.documentElement.classList.add("capture", `capture-${capture}`);
 document.documentElement.classList.toggle("reduced-motion", reducedMotion);
 
-/** Sans WebGL 2 (exigé par MapLibre 6) : image statique de la scène derrière la page 1. */
+/** Sans WebGL 2 (exigé par MapLibre 6) : image statique de la scène derrière les pages. */
 function showMapFallback() {
   document.documentElement.classList.add("no-webgl");
   const poster = document.getElementById("map-poster")!;
@@ -33,28 +32,43 @@ const title = initTitleLoop({ reducedMotion });
 initInscription();
 
 // ---------- Commandes de la scène : Pause (tout ce qui bouge), vue de dessus / 3D ----------
-const pauseBtn = document.querySelector<HTMLButtonElement>("[data-pause]")!;
+const pauseBtns = [...document.querySelectorAll<HTMLButtonElement>("[data-pause]")];
 const viewBtn = document.querySelector<HTMLButtonElement>("[data-view]")!;
 let scene: Scene | null = null;
 let userPaused = false;
-if (reducedMotion) pauseBtn.hidden = true;
-pauseBtn.addEventListener("click", () => {
-  userPaused = !userPaused;
-  pauseBtn.setAttribute("aria-pressed", String(userPaused));
-  pauseBtn.textContent = userPaused ? "Lecture" : "Pause";
-  title.setPaused("user", userPaused);
-  scene?.setUserPaused(userPaused);
-});
+for (const btn of pauseBtns) {
+  if (reducedMotion) btn.hidden = true;
+  btn.addEventListener("click", () => {
+    userPaused = !userPaused;
+    for (const b of pauseBtns) {
+      b.setAttribute("aria-pressed", String(userPaused));
+      b.textContent = userPaused ? "Lecture" : "Pause";
+    }
+    title.setPaused("user", userPaused);
+    scene?.setUserPaused(userPaused);
+  });
+}
 viewBtn.addEventListener("click", () => {
   if (!scene) return;
   const topDown = scene.toggleTopDown();
   viewBtn.textContent = topDown ? "Vue 3D" : "Vue de dessus";
 });
 
+// Voile de la page 2 : plus sombre en bas à mesure qu'on y arrive (légendes du relief
+// lisibles sur la scène). Variable CSS lue par .map-scrim::after.
+const mapLayer = document.getElementById("map-layer")!;
+let scrimRaf = 0;
+const updateScrim = () => {
+  scrimRaf = 0;
+  mapLayer.style.setProperty("--page2", String(Math.min(Math.max(window.scrollY / window.innerHeight, 0), 1)));
+};
+window.addEventListener("scroll", () => (scrimRaf ||= requestAnimationFrame(updateScrim)), { passive: true });
+updateScrim();
+
 // Test d'API sans créer de contexte (créer un contexte WebGL coûte cher au chargement) ;
 // un vrai échec à la création de la carte bascule aussi sur l'image statique.
 const webgl = typeof WebGL2RenderingContext !== "undefined";
-const accueil = document.getElementById("accueil")!;
+const pages = [document.getElementById("accueil")!, document.getElementById("boucle")!];
 
 if (!webgl) {
   showMapFallback();
@@ -69,7 +83,7 @@ if (!webgl) {
     started = true;
     for (const type of INTERACTIONS) window.removeEventListener(type, startMap);
     import("./map/boot")
-      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, page: accueil, userPaused }))
+      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, pages, userPaused }))
       .then((s) => {
         scene = s;
         viewBtn.hidden = false;

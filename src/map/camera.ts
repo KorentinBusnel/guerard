@@ -1,10 +1,13 @@
 /**
- * Caméra de la page 2 : la boucle en grand, en orbite lente.
+ * Caméra de la scène 3D (fond fixe des deux pages) : la boucle en grand, en orbite lente.
  *
+ * - Deux cadrages : sous le titre de la page 1, puis (grand écran) dans l'espace libre de
+ *   la page 2, entre les chiffres, le formulaire et le relief ; on passe de l'un à l'autre
+ *   au fil du défilement.
  * - On peut la faire tourner à la main (glisser) : l'orbite reprend après une pause.
  * - « Vue de dessus » / « Vue 3D » : transition d'inclinaison, animée dans la même boucle
  *   que l'orbite (un easeTo serait coupé par le jumpTo de l'orbite à l'image suivante).
- * - Arrêt complet quand la carte est cachée (page 1 à l'écran, onglet en arrière-plan).
+ * - Arrêt complet quand la scène est cachée (onglet en arrière-plan, pied de page).
  */
 import type * as maplibregl from "maplibre-gl";
 import type { PaddingOptions } from "maplibre-gl";
@@ -15,6 +18,11 @@ const ORBIT_DEG_PER_S = 4;
 const HOLD_AFTER_DRAG_MS = 2500;
 export const PITCH = { desktop: 60, mobile: 52, min: 0, max: 72 } as const;
 
+interface Frame {
+  zoom: number;
+  padding: { top: number; bottom: number; left: number; right: number };
+}
+
 export class HeliCamera {
   private raf = 0;
   private lastT = 0;
@@ -24,8 +32,13 @@ export class HeliCamera {
   /** Orbite automatique voulue (bouton Pause, reduced motion). */
   private spin: boolean;
   private holdUntil = 0;
-  /** Raisons d'arrêt complet (onglet caché, page 2 hors écran…). */
+  /** Raisons d'arrêt complet (onglet caché, scène hors écran…). */
   private readonly pausedBy = new Set<string>();
+  private frames: [Frame, Frame] = [
+    { zoom: 13.5, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+    { zoom: 13.5, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  ];
+  private progress = 0;
 
   constructor(
     private readonly map: maplibregl.Map,
@@ -37,34 +50,76 @@ export class HeliCamera {
   }
 
   /**
-   * Cadrage de la page 1 : la boucle occupe l'espace libre sous le titre, à côté du compte
-   * à rebours. Le zoom est calculé pour que le cercle englobant de la boucle (elle reste
-   * dans le cadre pendant toute l'orbite) tienne dans cet espace ; inclinée, elle s'écrase
-   * en hauteur, d'où le facteur `squash`.
+   * Cadrage : la boucle occupe l'espace libre d'une page. Le zoom est calculé pour que le
+   * cercle englobant de la boucle (elle reste dans le cadre pendant toute l'orbite) tienne
+   * dans cet espace ; inclinée, elle s'écrase en hauteur, d'où le facteur `squash`.
    */
-  private frame(): { center: [number, number]; zoom: number; padding: PaddingOptions } {
+  private frameIn(padding: Required<Pick<PaddingOptions, "top" | "bottom" | "left" | "right">>): Frame {
     const [[w, s], [e, n]] = routeBounds();
-    const center: [number, number] = [(w + e) / 2, (s + n) / 2];
-    const cosLat = Math.cos((center[1] * Math.PI) / 180);
+    const cosLat = Math.cos((((s + n) / 2) * Math.PI) / 180);
     const rM = Math.hypot(((e - w) / 2) * cosLat * 111_320, ((n - s) / 2) * 111_320);
-    const vh = window.innerHeight;
-    const vw = window.innerWidth;
-    const padding: PaddingOptions = this.opts.mobile
-      ? { top: Math.round(vh * 0.33), bottom: Math.round(vh * 0.3), left: 8, right: 8 }
-      : { top: Math.round(vh * 0.4), bottom: Math.round(vh * 0.08), left: Math.round(vw * 0.28), right: Math.round(vw * 0.02) };
-    const freeW = vw - (padding.left ?? 0) - (padding.right ?? 0);
-    const freeH = vh - (padding.top ?? 0) - (padding.bottom ?? 0);
+    const freeW = window.innerWidth - padding.left - padding.right;
+    const freeH = window.innerHeight - padding.top - padding.bottom;
     const squash = 0.56;
     const diamPx = Math.max(Math.min(freeW, freeH / squash), 160);
     // tuiles de 512 px : mètres par pixel = C · cos(lat) / (512 · 2^z)
     const zoom = Math.log2((40_075_016.686 * cosLat * diamPx) / (512 * 2 * rM));
-    return { center, zoom, padding };
+    return { zoom, padding };
   }
 
-  /** Place la caméra sur la boucle ; l'orbite démarre si elle est voulue (setSpin). */
+  /** Page 1 : sous le titre, à côté du compte à rebours. Page 2 : à gauche du formulaire. */
+  private computeFrames() {
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+    if (this.opts.mobile) {
+      const f = this.frameIn({ top: Math.round(vh * 0.33), bottom: Math.round(vh * 0.3), left: 8, right: 8 });
+      this.frames = [f, f];
+      return;
+    }
+    this.frames = [
+      this.frameIn({ top: Math.round(vh * 0.32), bottom: Math.round(vh * 0.08), left: Math.round(vw * 0.28), right: Math.round(vw * 0.02) }),
+      // colonne du formulaire (30rem + gouttières) à droite, relief en bas
+      this.frameIn({ top: Math.round(vh * 0.27), bottom: Math.round(vh * 0.31), left: Math.round(vw * 0.03), right: Math.min(Math.round(vw * 0.45), 600) }),
+    ];
+  }
+
+  private current() {
+    const [a, b] = this.frames;
+    const t = this.progress;
+    const mix = (x: number, y: number) => x + (y - x) * t;
+    const [[w, s], [e, n]] = routeBounds();
+    return {
+      center: [(w + e) / 2, (s + n) / 2] as [number, number],
+      zoom: mix(a.zoom, b.zoom),
+      padding: {
+        top: mix(a.padding.top, b.padding.top),
+        bottom: mix(a.padding.bottom, b.padding.bottom),
+        left: mix(a.padding.left, b.padding.left),
+        right: mix(a.padding.right, b.padding.right),
+      },
+      bearing: this.bearing,
+      pitch: this.pitch,
+    };
+  }
+
+  private apply() {
+    this.map.jumpTo(this.current());
+  }
+
+  /** Place la caméra sur la boucle (et recadre après un redimensionnement). */
   orbit() {
-    this.map.jumpTo({ ...this.frame(), bearing: this.bearing, pitch: this.pitch });
+    this.computeFrames();
+    this.apply();
     this.kick();
+  }
+
+  /** Défilement : 0 = page 1 à l'écran, 1 = page 2. */
+  setProgress(t: number) {
+    const p = Math.min(Math.max(t, 0), 1);
+    if (Math.abs(p - this.progress) < 0.001) return;
+    this.progress = p;
+    // si la boucle d'animation tourne, elle appliquera le cadrage à l'image suivante
+    if (!this.raf) this.apply();
   }
 
   get spinning() {
@@ -86,7 +141,7 @@ export class HeliCamera {
     this.targetPitch = on ? 0 : this.opts.mobile ? PITCH.mobile : PITCH.desktop;
     if (this.opts.reducedMotion) {
       this.pitch = this.targetPitch;
-      this.map.jumpTo({ pitch: this.pitch });
+      this.apply();
     }
     this.kick();
   }
@@ -99,7 +154,7 @@ export class HeliCamera {
       this.targetPitch = this.pitch;
     }
     this.holdUntil = performance.now() + HOLD_AFTER_DRAG_MS;
-    this.map.jumpTo({ bearing: this.bearing, pitch: this.pitch });
+    this.apply();
     this.kick();
   }
 
@@ -132,7 +187,7 @@ export class HeliCamera {
         this.pitch += (this.targetPitch - this.pitch) * k;
         if (Math.abs(this.targetPitch - this.pitch) <= 0.05) this.pitch = this.targetPitch;
       }
-      this.map.jumpTo({ bearing: this.bearing, pitch: this.pitch });
+      this.apply();
       if (this.pausedBy.size === 0 && this.needsFrame()) this.raf = requestAnimationFrame(tick);
       else this.raf = 0;
     };

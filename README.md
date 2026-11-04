@@ -3,14 +3,15 @@
 Landing de la backyard ultra de Guérard (77), édition « Again and Again », le
 28 novembre 2026. Deux pages :
 
-1. **Accueil** : le titre (ses lettres partent et reviennent toutes les 4 s) et le compte
+1. **Accueil** : le titre (ses lettres filent et reviennent toutes les 4 s) et le compte
    à rebours, devant la **boucle GPX en 3D** : le tracé en grand sur le relief, dressé
    d'un « mur » d'altitude, un coureur qui fait le tour et allume le mur sur son passage
    (« Yard 01, 02… »), en orbite lente. On la fait tourner en la glissant ; boutons
    Pause et Vue de dessus / Vue 3D.
-2. **La boucle et l'inscription** (en scrollant) : distance, D+, altitudes, montées ;
-   l'inscription **seul ou avec un ami** ; au bas, le **relief en grand** (profil
-   d'altitude avec kilomètres, montées et points haut et bas).
+2. **La boucle et l'inscription** (en scrollant, devant la même scène 3D, que la caméra
+   recadre dans l'espace libre) : distance, D+, altitudes, montées ; l'inscription
+   **seul ou avec un ami** ; au bas, le **relief en grand** (profil d'altitude avec
+   kilomètres, montées et points haut et bas).
 
 **Stack** : Vite + TypeScript vanilla, Tailwind v4, carte MapMap (`@mapmap/maps` sur
 MapLibre GL 6). Pas de framework : une page courte, l'essentiel est impératif (rAF,
@@ -92,39 +93,44 @@ carte :
   neutres Carbon Ink `#161b13`, Forest Charcoal `#2d3329`, Sage Stone `#84907f`,
   Topo Gray `#dde2e4`. Tokens dans `src/styles/app.css` (`@theme`) et
   `src/styles/tokens.ts` (carte, SVG).
-- **Typo** : le titre « Again and Again » en Instrument Serif italique (seul de son
-  espèce) ; Bebas Neue pour le nom, les chiffres et les titres (interligne 0,9) ;
-  IBM Plex Mono en capitales 12–16 px (légendes, boutons, formulaire) ; Times pour les
-  liens de texte.
+- **Typo** : le titre « Again and Again » en Archivo Black étendu (capitales larges,
+  droites, « rapides ») ; Bebas Neue pour le nom, les chiffres et les titres
+  (interligne 0,9) ; IBM Plex Mono en capitales 12–16 px (légendes, boutons,
+  formulaire) ; Times pour les liens de texte. La police du titre est une instance
+  statique 900/125 de la police variable Archivo réduite aux capitales (5 Ko,
+  `src/assets/fonts/`, licence OFL jointe), faite avec fonttools :
+  `fonttools varLib.instancer archivo-latin-wdth-normal.woff2 wght=900 wdth=125` puis
+  `pyftsubset … --unicodes="U+0020-005A,U+00C0-00DE,U+0152,U+2019,U+2013,U+2014,U+00B7" --flavor=woff2`
+  (source : `@fontsource-variable/archivo`, en dépendance de dev).
 - Angles droits, aucune ombre, boutons en contour 1 px, gouttière 24/40 px.
-- **Titre en boucle** : toutes les 4 s, chaque lettre sort par le haut et revient par le
-  bas, en vague (`src/sections/hero.ts`).
+- **Titre en boucle** : toutes les 4 s, les lettres filent vers la droite en traînée
+  floue et reviennent par la gauche, en vague (`src/sections/hero.ts`).
 
-## Scène 3D (page 1)
+## Scène 3D (fond des deux pages)
 
-- Calque `#map-layer` en haut de page, sous la page 1 (transparente) ; la page 2 est
-  opaque.
+- Calque `#map-layer` fixe, sous les deux pages (transparentes) ; le pied de page,
+  opaque, le recouvre.
 - **Mur d'altitude** (`src/map/wall.ts`) : le tracé découpé en tronçons de ~15 m,
   extrudés (`fill-extrusion`) à une hauteur qui suit l'altitude ; MapLibre pose chaque
   tronçon sur le relief. Le coureur (`src/map/runner.ts`, un tour en 26 s) les allume
   par `feature-state`, sans relancer le découpage des tuiles.
-- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre ;
-  orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
+- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, puis
+  (grand écran) à gauche du formulaire de la page 2, au fil du défilement ; orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
   au défilement), transition vue de dessus / 3D. Relief exagéré ×2,2 (×1,8 mobile).
 - MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé à la première interaction ou
   3,5 s après le chargement ; avant, le tracé est dessiné en SVG à la même place.
-  Tout s'arrête quand la page 1 quitte l'écran ou que l'onglet est caché.
+  Tout s'arrête quand aucune des deux pages n'est à l'écran ou que l'onglet est caché.
 - Thème dans `src/map/theme.ts`. Sans `VITE_MAPMAP_STYLE_URL`, repli sur le compilateur
   réduit du SDK (qui refuse le bloc `terrain`) : relief et ombrage demandés au SDK.
 - Sans clé (`VITE_MAPMAP_KEY`) hors localhost, le fond de carte est refusé (403) : il
   reste le relief, la boucle et son mur.
 - Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
-  (voile de lisibilité placé sous les coins de contrôle, contenu de la page 1 hors des
-  coins bas).
+  (voile de lisibilité placé sous les coins de contrôle, bas des pages laissé libre).
 
 ## Accessibilité, mouvement, fallback
 
-- Bouton **Pause** : arrête tout ce qui bouge (titre, orbite, coureur).
+- Bouton **Pause** (page 1 et page 2) : arrête tout ce qui bouge (titre, orbite,
+  coureur).
 - `prefers-reduced-motion` : titre figé, scène fixe sans orbite ni coureur, mur
   entièrement allumé.
 - Sans WebGL 2 ou si MapLibre échoue : image statique de la scène (`carte-fallback.webp`).

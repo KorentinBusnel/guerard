@@ -42,7 +42,7 @@ function contentTemplate(): Plugin {
  * elles ne sont découvertes qu'après le CSS et leur arrivée décale la mise en page.
  */
 const CRITICAL_FONTS = [
-  /instrument-serif-latin-400-italic-[\w-]+\.woff2$/,
+  /archivo-black-expanded-caps-[\w-]+\.woff2$/,
   /bebas-neue-latin-400-normal-[\w-]+\.woff2$/,
   /ibm-plex-mono-latin-400-normal-[\w-]+\.woff2$/,
 ];

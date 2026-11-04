@@ -1,7 +1,7 @@
 /**
- * La scène 3D en fond de la page 1 (chunk chargé après le premier affichage) : la boucle en
- * grand sur le relief, son mur d'altitude, le coureur qui l'allume tour après tour,
- * l'orbite lente. On la fait tourner en la glissant.
+ * La scène 3D en fond fixe des deux pages (chunk chargé après le premier affichage) : la
+ * boucle en grand sur le relief, son mur d'altitude, le coureur qui l'allume tour après
+ * tour, l'orbite lente. On la fait tourner en la glissant.
  */
 import { createForestMap } from "./forestMap";
 import { HeliCamera } from "./camera";
@@ -12,8 +12,8 @@ export interface BootOptions {
   reducedMotion: boolean;
   /** Vue figée pour les images statiques (OG, fallback). */
   capture: "og" | "fallback" | null;
-  /** La page 1, devant la carte : la scène ne tourne que si elle est à l'écran. */
-  page: HTMLElement;
+  /** Les pages devant la scène : elle ne tourne que si l'une d'elles est à l'écran. */
+  pages: HTMLElement[];
   /** État du bouton Pause au moment où la carte arrive. */
   userPaused: boolean;
 }
@@ -59,7 +59,7 @@ function enableDragRotate(el: HTMLElement, camera: HeliCamera) {
   el.addEventListener("pointercancel", end);
 }
 
-export async function bootMap({ mobile, reducedMotion, capture, page, userPaused }: BootOptions): Promise<Scene> {
+export async function bootMap({ mobile, reducedMotion, capture, pages, userPaused }: BootOptions): Promise<Scene> {
   const container = document.getElementById("map")!;
   const fm = await createForestMap({ container, mobile });
   const still = reducedMotion || !!capture;
@@ -89,14 +89,32 @@ export async function bootMap({ mobile, reducedMotion, capture, page, userPaused
     enableDragRotate(container, camera);
   }
 
-  // Tout s'arrête quand la page 1 quitte l'écran ou que l'onglet passe en arrière-plan.
-  new IntersectionObserver(
-    ([entry]) => {
-      camera.setPaused("page-hidden", !entry.isIntersecting);
-      runner.setPaused("page-hidden", !entry.isIntersecting);
+  // Tout s'arrête quand aucune des deux pages n'est à l'écran (pied de page) ou que
+  // l'onglet passe en arrière-plan.
+  const visible = new Set<Element>();
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
+      camera.setPaused("page-hidden", visible.size === 0);
+      runner.setPaused("page-hidden", visible.size === 0);
     },
     { threshold: 0.15 },
-  ).observe(page);
+  );
+  for (const p of pages) io.observe(p);
+
+  // La caméra suit le défilement : cadrage de la page 1, puis de la page 2.
+  let scrollRaf = 0;
+  const onScroll = () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      camera.setProgress(window.scrollY / window.innerHeight);
+    });
+  };
+  if (!capture) {
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
   document.addEventListener("visibilitychange", () => runner.setPaused("hidden", document.hidden));
   // Rotation d'écran, fenêtre redimensionnée : on recadre la boucle.
   let resizeTimer = 0;
