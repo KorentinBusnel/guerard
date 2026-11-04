@@ -33,7 +33,7 @@ export function viewStrings(): Record<string, string> {
     climbsCount: String(route.climbs.length),
     climbs: route.climbs.map((c) => `${num(c.lengthM)} m à ${num(c.avgGrade, 1)} %`).join(" · "),
     loopMinutes: String(format.loopMinutes),
-    price: event.priceEur !== null ? `${num(event.priceEur)} €` : tbc("tarif"),
+    price: event.priceEur !== null ? `${num(event.priceEur)} € par coureur` : tbc("tarif"),
     bibs: event.bibs !== null ? num(event.bibs) : tbc("nombre de dossards"),
   };
 }
