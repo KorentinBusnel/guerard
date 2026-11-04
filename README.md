@@ -26,8 +26,8 @@ npm run build           # typecheck + build prod dans dist/
 npm run preview         # sert dist/
 ```
 
-En local, la carte fonctionne **sans clé** (les tuiles sans clé servent localhost).
-En production, une clé navigateur est obligatoire (sinon tuiles 403 et carte vide).
+La scène 3D n'affiche que le relief, qui ne demande pas de clé : elle s'affiche aussi en
+production sans `VITE_MAPMAP_KEY`.
 
 ## Variables d'environnement
 
@@ -36,7 +36,7 @@ Copier `.env.example` en `.env` (en prod : variables du projet Vercel).
 | Variable | Où | Rôle |
 |---|---|---|
 | `VITE_INSCRIPTION_ENDPOINT` | navigateur | Adresse qui reçoit les inscriptions (ci-dessous). Vide → bouton désactivé. |
-| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap restreinte à l'origine du site. **Obligatoire en prod.** |
+| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap restreinte à l'origine du site. La scène n'affiche que le relief (sans clé, rien ne manque à l'écran) ; à mettre si l'on réaffiche le fond de carte. |
 | `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
 | `SITE_URL` | build | URL publique (rend `og:image` absolue). |
 | `MAPMAP_API_KEY` | scripts uniquement | `prepare:route`, `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
@@ -120,10 +120,14 @@ carte :
 - MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé à la première interaction ou
   3,5 s après le chargement ; avant, le tracé est dessiné en SVG à la même place.
   Tout s'arrête quand aucune des deux pages n'est à l'écran ou que l'onglet est caché.
+- **Relief seul** : du fond de carte, on ne garde que la couleur de fond et l'ombrage du
+  relief (`reliefOnly`, `src/map/forestMap.ts`) ; routes, rivières et noms de lieux
+  sont masqués, et leurs tuiles ne sont donc pas téléchargées.
 - Thème dans `src/map/theme.ts`. Sans `VITE_MAPMAP_STYLE_URL`, repli sur le compilateur
   réduit du SDK (qui refuse le bloc `terrain`) : relief et ombrage demandés au SDK.
-- Sans clé (`VITE_MAPMAP_KEY`) hors localhost, le fond de carte est refusé (403) : il
-  reste le relief, la boucle et son mur.
+- Sans clé (`VITE_MAPMAP_KEY`) hors localhost, l'en-tête du fond vectoriel est refusé
+  (403, avertissement `basemap-forbidden` en console) ; l'affichage n'en dépend pas
+  (relief seul).
 - Logo MapMap (bas droite) et attribution (bas gauche) : jamais masqués ni recouverts
   (voile de lisibilité placé sous les coins de contrôle, bas des pages laissé libre).
 

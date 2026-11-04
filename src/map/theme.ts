@@ -50,9 +50,6 @@ export const forestTheme = {
   territories: { planet: { road_shields: { visible: false } } },
 } as const;
 
-/** Couches de cartouches routiers (même règle, appliquée aussi au runtime). */
-export const ROAD_SHIELD_LAYERS = ["road-shields", "road-shields-street"] as const;
-
 export type ForestTheme = typeof forestTheme;
 
 /**

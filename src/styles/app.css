@@ -606,7 +606,7 @@
     /* la scène passe derrière le relief : un voile pour que le profil se lise */
     .relief {
       padding-top: 16px;
-      background: rgb(22 27 19 / 0.78);
+      background: rgb(22 27 19 / 0.6);
     }
     /* trop serré pour tout dire : les montées restent en légende de la page */
     .relief__label--climb,

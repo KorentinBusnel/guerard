@@ -1,5 +1,6 @@
 /**
- * La carte MapMap de la page 2 : papier topo de nuit, relief, la boucle en menthe.
+ * La scène MapMap (fond des deux pages) : le relief ombré seul, la boucle en menthe et
+ * son mur d'altitude.
  *
  * Deux modes de style :
  * - `VITE_MAPMAP_STYLE_URL` défini → style hébergé (compilateur canonique : il porte
@@ -12,7 +13,7 @@ import * as maplibregl from "maplibre-gl";
 import { createMap, type MapMapMap, type Theme } from "@mapmap/maps";
 import type { ExpressionSpecification } from "maplibre-gl";
 import type { FeatureCollection, LineString, Point } from "geojson";
-import { forestTheme, HILLSHADE, ROAD_SHIELD_LAYERS, sdkCompatibleTheme, TERRAIN_EXAGGERATION } from "./theme";
+import { forestTheme, HILLSHADE, sdkCompatibleTheme, TERRAIN_EXAGGERATION } from "./theme";
 import { palette } from "../styles/tokens";
 import { route } from "../data/route";
 import { buildWall, WALL_H_MAX, WALL_H_MIN, type WallSegment } from "./wall";
@@ -84,8 +85,20 @@ function applySky(map: maplibregl.Map) {
   });
 }
 
-function hideRoadShields(map: maplibregl.Map) {
-  for (const id of ROAD_SHIELD_LAYERS) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+/** Nos couches (la boucle, son mur, le départ) : toujours visibles. */
+const OWN_LAYERS = new Set(["route-wall", "route-casing", "route-line", "route-start"]);
+
+/**
+ * Fond « relief seul » : on ne garde du fond de carte que la couleur de fond et l'ombrage
+ * du relief ; routes, rivières, bâti et noms de lieux sont masqués. MapLibre ne charge pas
+ * les tuiles d'une source dont toutes les couches sont masquées : le fond vectoriel n'est
+ * plus téléchargé (et la clé MapMap n'est plus nécessaire à l'affichage).
+ */
+function reliefOnly(map: maplibregl.Map) {
+  for (const layer of map.getStyle().layers ?? []) {
+    if (OWN_LAYERS.has(layer.id) || layer.type === "background" || layer.type === "hillshade") continue;
+    if (map.getLayoutProperty(layer.id, "visibility") !== "none") map.setLayoutProperty(layer.id, "visibility", "none");
+  }
 }
 
 /** Dégradé « coupé » à `p` le long de la ligne (source en `lineMetrics`). */
@@ -226,7 +239,7 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
 
   const onStyle = () => {
     applySky(map);
-    hideRoadShields(map);
+    reliefOnly(map);
     if (styleMode === "sdk-dev") tuneDevHillshade(map);
   };
   map.on("style.load", onStyle);
