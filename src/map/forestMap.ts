@@ -188,7 +188,7 @@ function addRoute(mm: MapMapMap) {
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, mintA(0.22)), "line-width": lineWidth(16), "line-blur": lineWidth(12) },
+      paint: { "line-gradient": cutAt(1, mintA(0.22)), "line-width": lineWidth(16), "line-blur": lineWidth(12) },
     },
     { slot: "top" },
   );
@@ -198,7 +198,7 @@ function addRoute(mm: MapMapMap) {
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, palette.black), "line-width": lineWidth(8), "line-opacity": 0.8 },
+      paint: { "line-gradient": cutAt(1, palette.black), "line-width": lineWidth(8), "line-opacity": 0.8 },
     },
     { slot: "top" },
   );
@@ -208,7 +208,7 @@ function addRoute(mm: MapMapMap) {
       type: "line",
       source: "route",
       layout: round,
-      paint: { "line-gradient": cutAt(0, palette.mint), "line-width": lineWidth(3.6) },
+      paint: { "line-gradient": cutAt(1, palette.mint), "line-width": lineWidth(3.6) },
     },
     { slot: "top" },
   );
@@ -233,8 +233,8 @@ function addRoute(mm: MapMapMap) {
         "circle-stroke-color": palette.mint,
         "circle-stroke-width": 1.5,
         "circle-pitch-alignment": "map",
-        "circle-opacity": 0,
-        "circle-stroke-opacity": 0,
+        "circle-opacity": 1,
+        "circle-stroke-opacity": 1,
       },
     },
     { slot: "top" },
@@ -290,9 +290,10 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
   map.on("style.load", onStyle);
   addRoute(mm);
 
-  await mm.whenReady();
-  // whenReady peut arriver après le premier style.load : on réapplique, c'est idempotent
-  onStyle();
+  // Pas d'attente ici : la caméra se place tout de suite, avant les premières tuiles
+  // (sinon on chargerait d'abord celles d'une vue qu'on quitte aussitôt). whenReady peut
+  // arriver après le premier style.load : on réapplique, c'est idempotent.
+  void mm.whenReady().then(onStyle);
 
   let last = -1;
   const setDrawn = (p: number) => {

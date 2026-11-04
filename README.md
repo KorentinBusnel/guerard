@@ -6,10 +6,10 @@ Landing de la backyard ultra de Guérard (77), édition « Again and Again », l
 1. **Accueil** : le titre (ses lettres filent et reviennent toutes les 4 s) et le compte
    à rebours, devant la **boucle GPX en 3D** : le tracé en grand sur le relief, la
    forêt, les rivières, les routes et les villages, un coureur qui en fait le tour
-   (« Yard 01, 02… »), en orbite lente. Le dénivelé est au bas de la page 2. On la fait tourner en la glissant ; boutons
-   Pause et Vue de dessus / Vue 3D.
-2. **La boucle et l'inscription** (en scrollant, devant la même scène 3D, que la caméra
-   recadre dans l'espace libre) : distance, D+, altitudes, montées ; l'inscription
+   (« Yard 01, 02… »), en orbite lente. Le dénivelé est au bas de la page 2. On la fait
+   tourner en la glissant, on zoome ; boutons Pause, Vue de dessus / Vue 3D, − / +.
+2. **La boucle et l'inscription** (en scrollant ; page opaque, la scène 3D n'y est pas,
+   illisible derrière un formulaire) : distance, D+, altitudes, montées ; l'inscription
    **seul ou avec un ami** ; au bas, le **relief en grand** (profil d'altitude avec
    kilomètres, montées et points haut et bas).
 
@@ -107,11 +107,12 @@ carte :
 - **Titre en boucle** : toutes les 4 s, les lettres filent vers la droite en traînée
   floue et reviennent par la gauche, en vague (`src/sections/hero.ts`).
 
-## Scène 3D (fond des deux pages)
+## Scène 3D (fond de la page 1)
 
-- Calque `#map-layer` fixe, sous les deux pages (transparentes) ; le pied de page,
-  opaque, le recouvre.
-- **Boucle** : ligne menthe sur un halo flou, dessinée en 4 s à l'arrivée de la scène ;
+- Calque `#map-layer` en haut de page, sous la page 1 (transparente) ; il défile avec
+  elle et la page 2, opaque, vient ensuite.
+- **Boucle** : ligne menthe sur un halo flou, affichée d'emblée (le tracé SVG qui
+  attend la carte est à la même place) ;
   le coureur (`src/map/runner.ts`, un tour en 26 s, position par `src/map/track.ts`) en
   fait le tour, encore et encore, suivi d'une traînée lumineuse (`line-gradient`
   recalculé à chaque image).
@@ -124,14 +125,17 @@ carte :
   pincement du pavé tactile) pour zoomer, la molette seule faisant défiler la page ;
   boutons − / + ; double-clic pour revenir au cadrage. Survoler (ou toucher) le tracé
   affiche le kilomètre et l'altitude du point, repérés aussi sur le grand profil de la
-  page 2 ; survoler le profil place le point sur la boucle 3D.
-- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, puis
-  (grand écran) à gauche du formulaire de la page 2, au fil du défilement ; orbite
-  lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
+  page 2 ; survoler le profil affiche le kilomètre et l'altitude sur le profil.
+- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, à
+  côté du compte à rebours ; orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
   au défilement), transition vue de dessus / 3D. Relief exagéré ×2,2 (×1,8 mobile).
-- MapLibre + SDK (~1 Mo) sont un chunk séparé, chargé à la première interaction ou
-  3,5 s après le chargement ; avant, le tracé est dessiné en SVG à la même place.
-  Tout s'arrête quand aucune des deux pages n'est à l'écran ou que l'onglet est caché.
+- **Chargement** : MapLibre + SDK (~1 Mo, 370 Ko gzip) sont un chunk séparé, téléchargé
+  dès la fin du chargement de la page (`requestIdleCallback`, ou première interaction)
+  ; la caméra se place avant les premières tuiles, et la carte se dévoile quand celles
+  du cadrage sont là, au plus tard 2,5 s après sa création (le relief finit d'arriver
+  sous les yeux). Avant, le tracé est dessiné en SVG à la même place. Pas de
+  préchargement dans le HTML : il prendrait la bande passante des polices (LCP).
+  Tout s'arrête quand la page 1 quitte l'écran ou que l'onglet est caché.
 - **Fond épuré** (`trimBasemap`, `src/map/forestMap.ts`) : sur le relief ombré, on ne
   garde que la forêt (seule couverture du sol affichée), l'eau et les rivières, les
   routes (sans chemins ni rail) et les noms de villes et villages ; bâti, points
@@ -146,7 +150,7 @@ carte :
 
 ## Accessibilité, mouvement, fallback
 
-- Bouton **Pause** (page 1 et page 2) : arrête tout ce qui bouge (titre, orbite,
+- Bouton **Pause** : arrête tout ce qui bouge (titre, orbite,
   coureur).
 - `prefers-reduced-motion` : titre figé, scène fixe sans orbite ni coureur, boucle
   dessinée d'emblée.
@@ -157,8 +161,12 @@ carte :
 
 ## Lighthouse (build prod, Chromium headless sans GPU)
 
-Mobile (3 passes) et desktop : performance 100, accessibilité 100, bonnes pratiques 100,
-SEO 100 (TBT 0 ms, CLS 0). Les trois polices du premier écran sont préchargées au build
+Mobile : accessibilité 100, bonnes pratiques 100, SEO 100 ; premier affichage 0,9 s,
+LCP 1,2 s, CLS 0,007. Performance 60 : la scène 3D démarre désormais juste après le
+chargement, et Lighthouse, sans GPU, la rend en WebGL logiciel (chaque image de carte
+devient une longue tâche, TBT ≈ 90 s). Sur un vrai appareil (GPU), ce coût n'existe pas.
+Le démarrage à la première interaction ou après 3,5 s donnait 100, mais la carte
+arrivait trop tard. Les trois polices du premier écran sont préchargées au build
 (`vite.config.ts`) : sans cela leur arrivée décalait la mise en page (CLS 0,28).
 
 ## Pièges traités

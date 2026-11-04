@@ -24,10 +24,11 @@
   <body>
     <a href="#inscription" class="skip-link">Aller à l'inscription</a>
 
-    <!-- Scène 3D en fond fixe des deux pages (transparentes devant elle).
+    <!-- Scène 3D en fond de la page 1 (transparente devant elle) : elle défile avec elle ;
+         la page 2, opaque, vient ensuite.
          Position et hauteur en style inline : les utilitaires Tailwind (cascade layer)
          ne doivent pas pouvoir perdre contre .maplibregl-map → hauteur 0. -->
-    <div id="map-layer" style="position: fixed; inset: 0; height: 100dvh; z-index: 0; overflow: hidden">
+    <div id="map-layer" style="position: absolute; top: 0; left: 0; right: 0; height: 100dvh; z-index: 0; overflow: hidden">
       <div id="map-poster" class="map-poster" aria-hidden="true">
         <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
           <path class="map-poster__line" d="{{svg:route}}" />
@@ -89,8 +90,7 @@
       </a>
     </header>
 
-    <!-- Page 2 : la boucle en chiffres, l'inscription, et le relief en grand au bas,
-         devant la même scène 3D -->
+    <!-- Page 2 : la boucle en chiffres, l'inscription, et le relief en grand au bas -->
     <main>
       <section id="boucle" class="boucle" aria-labelledby="boucle-title">
         <div class="boucle__grid">
@@ -143,12 +143,9 @@
         </div>
 
         <figure class="relief" aria-labelledby="relief-caption">
-          <div class="relief__head">
-            <figcaption id="relief-caption" class="caption relief__caption">
-              Le relief · de {{eleMin}} à {{eleMax}} m · D+ {{dPlus}} m par tour
-            </figcaption>
-            <button type="button" class="btn-outline btn-outline--small" aria-pressed="false" data-pause>Pause</button>
-          </div>
+          <figcaption id="relief-caption" class="caption relief__caption">
+            Le relief · de {{eleMin}} à {{eleMax}} m · D+ {{dPlus}} m par tour
+          </figcaption>
           <div class="relief__plot">{{html:reliefProfile}}</div>
         </figure>
       </section>
