@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#161b13" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{{fullName}}, backyard ultra en forêt à {{commune}}</title>
+    <meta
+      name="description"
+      content="{{fullName}} : une boucle de {{loopKm3}} km en forêt, un départ toutes les heures, jusqu'au dernier coureur debout. {{date}}, {{place}}."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content="{{fullName}}" />
+    <meta property="og:description" content="Une boucle de {{loopKm3}} km en forêt. Un départ toutes les heures. {{date}}." />
+    <meta property="og:url" content="{{siteUrl}}" />
+    <meta property="og:image" content="{{ogImage}}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Carte de la boucle en forêt autour de {{commune}}" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a href="#inscription" class="skip-link">Aller à l'inscription</a>
+
+    <!-- Carte fixe en fond : visible à travers la page 2 (la page 1 est opaque).
+         Position et hauteur en style inline : les utilitaires Tailwind (cascade layer)
+         ne doivent pas pouvoir perdre contre .maplibregl-map → hauteur 0. -->
+    <div id="map-layer" style="position: fixed; inset: 0; height: 100dvh; z-index: 0">
+      <div id="map-poster" class="map-poster" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <path class="map-poster__line" d="{{svg:route}}" />
+        </svg>
+      </div>
+      <div
+        id="map"
+        role="region"
+        aria-label="Carte 3D de la boucle en forêt autour de {{commune}}"
+        style="position: absolute; inset: 0; width: 100%; height: 100%"
+      ></div>
+      <!-- Voile de lisibilité : au-dessus du canevas, SOUS les coins de contrôle MapLibre
+           (z-index 2) pour ne jamais masquer l'attribution ni le logo. -->
+      <div class="map-scrim" aria-hidden="true"></div>
+    </div>
+
+    <!-- Page 1 : le titre, le compte à rebours, l'inscription -->
+    <header id="accueil" class="accueil">
+      <nav class="topbar" aria-label="Accueil">
+        <p class="wordmark">{{name}}</p>
+        <a class="btn-outline" href="#inscription">S'inscrire</a>
+      </nav>
+
+      <div class="accueil__title">
+        <p class="caption">{{date}} · {{place}}</p>
+        <h1 class="title-loop">
+          <span class="sr-only">{{headline}}</span>
+          <span class="title-loop__text" aria-hidden="true" data-title-loop>{{html:titleLetters}}</span>
+        </h1>
+      </div>
+
+      <div class="accueil__grid">
+        <div class="accueil__left">
+          <figure class="loop-art" aria-hidden="true">
+            <svg viewBox="0 0 100 100">
+              <path class="loop-art__base" d="{{svg:route}}" />
+              <path class="loop-art__trail" d="{{svg:route}}" pathLength="1" data-loop-trail />
+              <circle class="loop-art__runner" r="1.8" data-loop-runner />
+            </svg>
+            <figcaption class="caption"><span data-yard>Yard 01</span> · {{loopKm3}} km, et on recommence</figcaption>
+          </figure>
+
+          <div class="countdown">
+            <p class="caption" id="countdown-label">Avant le premier départ</p>
+            <p class="countdown__digits" aria-labelledby="countdown-label" data-countdown>
+              <span class="countdown__unit"><span data-cd="d">--</span><span class="caption">jours</span></span>
+              <span class="countdown__unit"><span data-cd="h">--</span><span class="caption">h</span></span>
+              <span class="countdown__unit"><span data-cd="m">--</span><span class="caption">min</span></span>
+              <span class="countdown__unit"><span data-cd="s">--</span><span class="caption">s</span></span>
+            </p>
+            <p class="caption countdown__note">Premier départ : {{startTime}}</p>
+          </div>
+        </div>
+
+        <form id="inscription" class="inscription" data-inscription>
+          <h2 class="heading">S'inscrire</h2>
+
+          <fieldset class="formule">
+            <legend class="caption">Formule</legend>
+            <label class="choice"><input type="radio" name="formule" value="solo" checked /><span>Seul</span></label>
+            <label class="choice"><input type="radio" name="formule" value="duo" /><span>Avec un ami</span></label>
+          </fieldset>
+
+          <fieldset class="person">
+            <legend class="caption">Toi</legend>
+            <label class="field"><span class="caption">Nom et prénom</span><input name="nom" autocomplete="name" required /></label>
+            <label class="field"><span class="caption">E-mail</span><input name="email" type="email" autocomplete="email" required /></label>
+          </fieldset>
+
+          <fieldset class="person" data-friend hidden disabled>
+            <legend class="caption">Ton ami·e</legend>
+            <label class="field"><span class="caption">Nom et prénom</span><input name="ami_nom" autocomplete="off" required /></label>
+            <label class="field"><span class="caption">E-mail</span><input name="ami_email" type="email" autocomplete="off" required /></label>
+          </fieldset>
+
+          <label class="consent">
+            <input type="checkbox" name="consentement" required />
+            <span>J'accepte que ces informations servent uniquement à gérer l'inscription ({{html:legalLink}}).</span>
+          </label>
+
+          <!-- Pot de miel anti-spam : invisible pour les humains -->
+          <div class="hp" aria-hidden="true">
+            <label>Ne pas remplir <input name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+          </div>
+
+          <button type="submit" class="btn-outline btn-outline--ink" data-submit>Envoyer l'inscription</button>
+          <p class="caption inscription__status" role="status" data-status></p>
+          <p class="caption inscription__meta">Tarif : {{price}} · Dossards : {{bibs}}</p>
+        </form>
+      </div>
+
+      <a class="scroll-cue" href="#boucle">
+        <span class="caption">La boucle</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" /><path d="M8 10.5l4 4 4-4" /></svg>
+      </a>
+    </header>
+
+    <!-- Page 2 : la boucle GPX sur la carte -->
+    <main>
+      <section id="boucle" class="boucle" aria-labelledby="boucle-title">
+        <div class="boucle__top">
+          <p class="caption">La boucle · {{place}}</p>
+          <ul class="caption boucle__stats">
+            <li>D+ {{dPlus}} m</li>
+            <li>Altitude {{eleMin}}–{{eleMax}} m</li>
+            <li>{{climbsCount}} montées : {{climbs}}</li>
+            <li>Un départ toutes les {{loopMinutes}} min, jusqu'au dernier debout</li>
+          </ul>
+        </div>
+        <div class="boucle__bottom">
+          <div class="profile">{{html:miniProfile}}</div>
+          <h2 id="boucle-title" class="display boucle__title">{{loopKm3}} km</h2>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p class="wordmark wordmark--ink">{{fullName}}</p>
+      <ul class="caption site-footer__list">{{html:footerCredits}}</ul>
+      <p class="caption site-footer__credits">
+        Carte : <a class="link-serif" href="https://mapmap.ai">MapMap</a> · ©
+        <a class="link-serif" href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · © OpenMapTiles ·
+        Relief : Mapzen, AWS Open Data.
+      </p>
+      <div class="caption site-footer__caption">
+        <p>{{commune}} · {{departement}}</p>
+        <p>{{startCoords}}</p>
+        <p>{{date}}</p>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,590 @@
+/* Ordre des cascade layers. maplibre-gl.css va dans `vendor` : hors layer, il battrait les
+   utilitaires Tailwind et ferait s'effondrer le conteneur de carte à 0 px (docs MapMap,
+   troubleshooting). `vendor` se place APRÈS `base` : tout en bas, le preflight Tailwind
+   (`summary { display: list-item }`) réafficherait le bouton (i) de l'attribution par-dessus
+   le crédit OSM. Les utilitaires restent au-dessus de tout. */
+@layer theme, base, vendor, components, utilities;
+/* maplibre-gl.css arrive avec le chunk carte (src/map/vendor.css), dans ce même layer. */
+@import "tailwindcss";
+
+/* Design « field guide » (référence San Rita) : une seule couleur de marque, Highlighter
+   Mint ; cinq neutres ; titres d'affichage géants à 0,9 d'interligne ; tout le reste en
+   mono majuscules ; ni arrondi, ni ombre. Miroir TS : src/styles/tokens.ts. */
+@theme {
+  --color-mint: #e2ffcc;
+  --color-sage: #84907f;
+  --color-carbon: #161b13;
+  --color-charcoal: #2d3329;
+  --color-topo: #dde2e4;
+  --color-ink: #000000;
+
+  --font-display: "Bebas Neue", Anton, "Arial Narrow", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: Times, "Times New Roman", serif;
+}
+
+:root {
+  --gutter: 24px;
+  --section-gap: 67px;
+  color-scheme: dark;
+}
+@media (min-width: 900px) {
+  :root {
+    --gutter: 40px;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--color-carbon);
+    color: var(--color-mint);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* ---------- Typographie ---------- */
+  .caption {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+  .display,
+  .wordmark,
+  .heading,
+  .title-loop {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: normal;
+    text-transform: uppercase;
+  }
+  .wordmark {
+    font-size: 40px;
+    color: var(--color-mint);
+  }
+  .wordmark--ink {
+    color: var(--color-charcoal);
+  }
+  .heading {
+    font-size: 48px;
+  }
+  .link-serif {
+    font-family: var(--font-serif);
+    font-size: 1.15em;
+    text-transform: none;
+    letter-spacing: normal;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: var(--gutter);
+    top: -4rem;
+    z-index: 50;
+    padding: 12px 16px;
+    background: var(--color-mint);
+    color: var(--color-carbon);
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+  .skip-link:focus {
+    top: 12px;
+  }
+
+  /* ---------- Bouton à contour (seul style de bouton) ---------- */
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 12px 16px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: var(--color-mint);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+  }
+  .btn-outline:hover {
+    background: var(--color-mint);
+    color: var(--color-carbon);
+  }
+  .btn-outline--ink {
+    color: var(--color-charcoal);
+  }
+  .btn-outline--ink:hover {
+    background: var(--color-charcoal);
+    color: var(--color-topo);
+  }
+  .btn-outline:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .btn-outline:disabled:hover {
+    background: transparent;
+    color: var(--color-charcoal);
+  }
+  :where(a, button, input, label):focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+  }
+
+  /* ---------- Page 1 : accueil ---------- */
+  .accueil {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    padding-bottom: 72px;
+    background: var(--color-carbon);
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px var(--gutter);
+  }
+  .accueil__title {
+    padding: 24px var(--gutter) 0;
+  }
+  .accueil__title > .caption {
+    margin-bottom: 12px;
+  }
+
+  /* Le titre : une ligne qui occupe toute la largeur ; ses lettres partent et
+     reviennent à chaque tour du coureur (classe `.is-again` posée par le JS). */
+  .title-loop {
+    margin: 0;
+    /* une ligne qui remplit la largeur utile (≈ 5,25 em pour « AGAIN AND AGAIN » en Bebas) */
+    font-size: min(calc((100vw - 2 * var(--gutter)) / 5.3), 366px);
+    white-space: nowrap;
+    color: var(--color-mint);
+  }
+  .title-loop__word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    /* la boîte de clip suit l'œil de la capitale */
+    line-height: 0.92;
+    padding-top: 0.04em;
+  }
+  .title-loop__letter {
+    display: inline-block;
+  }
+  .is-again .title-loop__letter {
+    animation: letter-again 1100ms cubic-bezier(0.7, 0, 0.3, 1) calc(var(--i) * 45ms) both;
+  }
+  @keyframes letter-again {
+    0% {
+      transform: translateY(0);
+    }
+    45% {
+      transform: translateY(-110%);
+    }
+    45.01% {
+      transform: translateY(110%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  .accueil__grid {
+    display: grid;
+    gap: 24px;
+    padding: 24px var(--gutter) 0;
+    flex: 1;
+    align-items: end;
+  }
+  @media (min-width: 900px) {
+    .accueil__grid {
+      grid-template-columns: 1fr minmax(360px, 30rem);
+      gap: 40px;
+    }
+  }
+  .accueil__left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 24px 40px;
+  }
+
+  .loop-art {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .loop-art svg {
+    width: clamp(150px, 20vw, 260px);
+    height: auto;
+    overflow: visible;
+  }
+  .loop-art__base {
+    fill: none;
+    stroke: var(--color-sage);
+    stroke-width: 0.6;
+    stroke-linejoin: round;
+  }
+  .loop-art__trail {
+    fill: none;
+    stroke: var(--color-mint);
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .loop-art__runner {
+    fill: var(--color-mint);
+    stroke: var(--color-carbon);
+    stroke-width: 0.6;
+  }
+
+  .countdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .countdown__digits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+  }
+  .countdown__unit {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .countdown__unit .caption {
+    padding-bottom: 0.45em;
+    color: var(--color-sage);
+  }
+  .countdown__note {
+    color: var(--color-sage);
+  }
+
+  /* Bande claire : le formulaire d'inscription */
+  .inscription {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    background: var(--color-topo);
+    color: var(--color-charcoal);
+  }
+  .inscription fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .inscription legend {
+    padding: 0;
+    margin-bottom: 8px;
+  }
+  .formule {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .formule legend {
+    width: 100%;
+  }
+  .choice {
+    position: relative;
+    cursor: pointer;
+  }
+  .choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .choice span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-charcoal);
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+  .choice input:checked + span {
+    background: var(--color-charcoal);
+    color: var(--color-topo);
+  }
+  .choice input:focus-visible + span {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+  .person {
+    display: grid;
+    gap: 12px;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field input {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-charcoal);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-charcoal);
+    font-family: var(--font-mono);
+    font-size: 16px;
+  }
+  .field input:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  .consent {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .consent input {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-charcoal);
+    flex: none;
+  }
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .inscription__status:empty {
+    display: none;
+  }
+  .inscription__status[data-tone="error"] {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+  .inscription__meta {
+    color: color-mix(in oklab, var(--color-charcoal) 85%, var(--color-topo));
+  }
+
+  .scroll-cue {
+    position: absolute;
+    left: var(--gutter);
+    bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-mint);
+    text-decoration: none;
+  }
+  .scroll-cue svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+  }
+
+  /* ---------- Page 2 : la boucle ---------- */
+  .boucle {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100dvh;
+    /* transparent aux clics : l'attribution de la carte, dessous, reste cliquable */
+    pointer-events: none;
+    /* bas : on laisse libres les coins attribution / logo */
+    padding: var(--section-gap) var(--gutter) 34px;
+  }
+  .boucle__top {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 34rem;
+  }
+  .boucle__stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--color-topo);
+  }
+  .boucle__bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .profile {
+    height: clamp(56px, 9vh, 90px);
+  }
+  .profile__svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .boucle__title {
+    margin: 0;
+    font-size: min(17vw, 366px);
+    white-space: nowrap;
+    color: var(--color-mint);
+  }
+
+  /* ---------- Pied de page : bande claire ---------- */
+  .site-footer {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    gap: 24px;
+    padding: var(--section-gap) var(--gutter);
+    background: var(--color-topo);
+    color: var(--color-charcoal);
+  }
+  @media (min-width: 900px) {
+    .site-footer {
+      grid-template-columns: 1fr auto;
+    }
+  }
+  .site-footer__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .site-footer__credits {
+    text-transform: none;
+  }
+  .site-footer__caption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: right;
+  }
+  @media (min-width: 900px) {
+    .site-footer__caption {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      align-self: end;
+    }
+  }
+
+  /* ---------- Fond de carte ---------- */
+  /* Affiche affichée avant la carte (et à la place de la carte sans WebGL) */
+  .map-poster {
+    position: absolute;
+    inset: 0;
+    background: var(--color-carbon);
+    transition: opacity 900ms ease;
+  }
+  .map-poster svg {
+    position: absolute;
+    inset: 12% 8% 30%;
+    width: 84%;
+    height: 58%;
+  }
+  .map-poster__line {
+    fill: none;
+    stroke: var(--color-mint);
+    stroke-width: 0.5;
+    stroke-linejoin: round;
+  }
+  .map-ready .map-poster {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .map-poster__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (max-aspect-ratio: 1/1) {
+    .map-poster__img {
+      object-fit: contain;
+      object-position: center 20%;
+    }
+  }
+  .map-poster.has-image svg {
+    display: none;
+  }
+
+  /* Voile de lisibilité de la page 2 (dans #map-layer, entre canevas et contrôles) */
+  .map-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgb(22 27 19 / 0.85) 0%, rgb(22 27 19 / 0) 30%),
+      linear-gradient(0deg, rgb(22 27 19 / 0.9) 0%, rgb(22 27 19 / 0) 42%);
+  }
+  @media (max-width: 640px) {
+    .map-scrim {
+      background:
+        linear-gradient(180deg, rgb(22 27 19 / 0.92) 0%, rgb(22 27 19 / 0.75) 22%, rgb(22 27 19 / 0) 38%),
+        linear-gradient(0deg, rgb(22 27 19 / 0.9) 0%, rgb(22 27 19 / 0) 36%);
+    }
+  }
+
+  /* Mode capture (images OG / fallback, ?capture=og|fallback) */
+  .capture .accueil,
+  .capture .site-footer,
+  .capture .skip-link {
+    display: none;
+  }
+  .capture-fallback .boucle,
+  .capture-fallback .map-scrim {
+    visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .is-again .title-loop__letter {
+      animation: none;
+    }
+    .btn-outline,
+    .map-poster {
+      transition: none;
+    }
+  }
+}

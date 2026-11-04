@@ -1,0 +1,16 @@
+[
+  {
+    "id": "exemple-montee",
+    "type": "montee",
+    "name": "[NOM DE LA MONTÉE À CONFIRMER]",
+    "description": "Format attendu par scripts/prepare-route.ts. Copier en data/poi.json et remplacer par les vrais points.",
+    "lngLat": [2.95, 48.82],
+    "lengthM": 400
+  },
+  {
+    "id": "exemple-ravito",
+    "type": "ravito",
+    "name": "[RAVITO À CONFIRMER]",
+    "distM": 3350
+  }
+]
