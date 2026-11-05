@@ -27,17 +27,21 @@ npm run preview         # sert dist/
 ```
 
 En local, la carte fonctionne **sans clé** (les tuiles sans clé servent localhost).
-En production, sans `VITE_MAPMAP_KEY`, la scène n'affiche que le relief (ni forêt, ni
-routes, ni rivières, ni villages).
+En production, la clé navigateur MapMap est dans `.env.production` (versionné) ; sans
+elle, la scène n'afficherait que le relief (ni forêt, ni routes, ni rivières, ni
+villages).
 
 ## Variables d'environnement
 
-Copier `.env.example` en `.env` (en prod : variables du projet Vercel).
+Copier `.env.example` en `.env` (en prod : variables du projet Vercel, qui priment sur
+les fichiers). `.env.production` est versionné : il ne contient que des valeurs
+**publiques** du build de prod (la clé MapMap navigateur, de toute façon lisible dans le
+JS du site), jamais de secret.
 
 | Variable | Où | Rôle |
 |---|---|---|
 | `VITE_INSCRIPTION_ENDPOINT` | navigateur | Adresse qui reçoit les inscriptions (ci-dessous). Vide → bouton désactivé. |
-| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap restreinte à l'origine du site. **Nécessaire en prod** pour la forêt, les routes, les rivières et les villages (sans elle : relief seul). |
+| `VITE_MAPMAP_KEY` | navigateur | Clé MapMap `snk_…` (dans `.env.production`). **Nécessaire en prod** pour la forêt, les routes, les rivières et les villages (sans elle : relief seul). Clé émise par `POST https://api.mapmap.ai/v1/keys` ; provisoire (1 000 appels, 72 h) tant que l'e-mail de confirmation n'est pas validé. |
 | `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
 | `SITE_URL` | build | URL publique (rend `og:image` absolue). |
 | `MAPMAP_API_KEY` | scripts uniquement | `prepare:route`, `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
