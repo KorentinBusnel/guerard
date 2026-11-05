@@ -53,7 +53,7 @@
       </nav>
 
       <div class="accueil__title">
-        <p class="caption">{{date}} · {{place}}</p>
+        <p class="caption">{{place}}</p>
         <h1 class="title-loop">
           <span class="sr-only">{{headline}}</span>
           <span class="title-loop__text" aria-hidden="true" data-title-loop>{{html:titleLetters}}</span>
@@ -69,7 +69,8 @@
             <span class="countdown__unit"><span data-cd="m">--</span><span class="caption">min</span></span>
             <span class="countdown__unit"><span data-cd="s">--</span><span class="caption">s</span></span>
           </p>
-          <p class="caption countdown__note">Premier départ : {{startTime}} · {{loopKm3}} km toutes les {{loopMinutes}} min</p>
+          <p class="countdown__date">{{date}} · premier départ {{startTime}}</p>
+          <p class="caption countdown__note">{{loopKm3}} km toutes les {{loopMinutes}} min, jusqu'au dernier debout</p>
         </div>
 
         <div class="scene-ui">
@@ -126,10 +127,7 @@
               <label class="field"><span class="caption">E-mail</span><input name="ami_email" type="email" autocomplete="off" required /></label>
             </fieldset>
 
-            <label class="consent">
-              <input type="checkbox" name="consentement" required />
-              <span>J'accepte que ces informations servent uniquement à gérer l'inscription ({{html:legalLink}}).</span>
-            </label>
+            <p class="caption inscription__note">Tes informations servent uniquement à gérer l'inscription.</p>
 
             <!-- Pot de miel anti-spam : invisible pour les humains -->
             <div class="hp" aria-hidden="true">
@@ -138,7 +136,7 @@
 
             <button type="submit" class="btn-outline btn-outline--ink" data-submit>Envoyer l'inscription</button>
             <p class="caption inscription__status" role="status" data-status></p>
-            <p class="caption inscription__meta">Tarif : {{price}} · Dossards : {{bibs}}</p>
+            <p class="caption inscription__meta">Tarif : {{price}} · Dossards : {{bibs}}<span data-restants></span></p>
           </form>
         </div>
 
@@ -153,7 +151,6 @@
 
     <footer class="site-footer">
       <p class="wordmark wordmark--ink">{{fullName}}</p>
-      <ul class="caption site-footer__list">{{html:footerCredits}}</ul>
       <p class="caption site-footer__credits">
         Carte : <a class="link-serif" href="https://mapmap.ai">MapMap</a> · ©
         <a class="link-serif" href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · © OpenMapTiles ·

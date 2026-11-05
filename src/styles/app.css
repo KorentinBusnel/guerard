@@ -390,6 +390,16 @@
     padding-bottom: 0.45em;
     color: var(--color-sage);
   }
+  /* la date, juste sous le décompte */
+  .countdown__date {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--color-mint);
+  }
   .countdown__note {
     color: var(--color-sage);
   }
@@ -471,19 +481,8 @@
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
-  .consent {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    font-size: 12px;
-    line-height: 1.35;
-  }
-  .consent input {
-    margin-top: 2px;
-    width: 18px;
-    height: 18px;
-    accent-color: var(--color-charcoal);
-    flex: none;
+  .inscription__note {
+    color: color-mix(in oklab, var(--color-charcoal) 85%, var(--color-topo));
   }
   .hp {
     position: absolute;
@@ -709,14 +708,6 @@
     .site-footer {
       grid-template-columns: 1fr auto;
     }
-  }
-  .site-footer__list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 24px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
   }
   .site-footer__credits {
     text-transform: none;

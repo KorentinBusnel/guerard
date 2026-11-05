@@ -16,11 +16,8 @@ export const event = {
   startTime: "10:00" as string | null,
   /** Tarif d'inscription, en euros. */
   priceEur: 25 as number | null,
+  /** Nombre de dossards (le script du Google Sheet refuse au-delà : scripts/google-sheet). */
   bibs: 50 as number | null,
-  /** Organisateur, contact, mentions légales (le formulaire collecte des données personnelles). */
-  organizer: null as string | null,
-  contactEmail: null as string | null,
-  legalUrl: null as string | null,
 } as const;
 
 /** Règles du format backyard (brief). La distance AFFICHÉE vient toujours du GPX. */
