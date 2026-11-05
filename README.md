@@ -40,35 +40,39 @@ JS du site), jamais de secret.
 
 | Variable | Où | Rôle |
 |---|---|---|
-| `VITE_INSCRIPTION_ENDPOINT` | navigateur | Adresse qui reçoit les inscriptions (ci-dessous). Vide → bouton désactivé. |
+| `VITE_INSCRIPTION_ENDPOINT` | navigateur | URL de l'application Web Apps Script qui écrit dans le Google Sheet (ci-dessous). Vide → bouton désactivé. |
 | `VITE_MAPMAP_KEY` | navigateur | Clé MapMap `snk_…` (dans `.env.production`). **Nécessaire en prod** pour la forêt, les routes, les rivières et les villages (sans elle : relief seul). Clé émise par `POST https://api.mapmap.ai/v1/keys` ; provisoire (1 000 appels, 72 h) tant que l'e-mail de confirmation n'est pas validé. |
 | `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
 | `SITE_URL` | build | URL publique (rend `og:image` absolue). |
 | `MAPMAP_API_KEY` | scripts uniquement | `prepare:route`, `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
 
-## Inscription
+## Inscription → Google Sheet
 
-Le formulaire (`src/sections/inscription.ts`) envoie un `POST` JSON à
-`VITE_INSCRIPTION_ENDPOINT` avec `Accept: application/json` :
+Chaque inscription est une ligne de la feuille Google **« Inscriptions — Again and
+Again (Backyard de Guérard) »** (Drive de l'organisateur) : Horodatage, Formule, Nom et
+prénom, E-mail, Binôme, Édition. Un duo donne deux lignes (chaque coureur a son
+dossard), chacune avec le nom de l'autre en « Binôme ».
 
-```json
-{ "formule": "solo|duo", "nom": "…", "email": "…", "ami_nom": "…", "ami_email": "…",
-  "consentement": true, "edition": "Again and Again",
-  "_subject": "Inscription Again and Again — duo", "_replyto": "…" }
-```
+Le pont entre le site et la feuille est un script Apps Script lié à la feuille,
+`scripts/google-sheet/inscriptions.gs` (en tête du fichier : la mise en place) :
 
-C'est le format de **Formspree** : créer un formulaire sur formspree.io, coller son URL
-(`https://formspree.io/f/xxxxxxxx`) dans `VITE_INSCRIPTION_ENDPOINT`, redéployer. Chaque
-inscription arrive par e-mail à l'organisateur et reste exportable en CSV. Tout autre
-service qui accepte un POST JSON convient. Anti-spam : champ pot de miel `_gotcha`.
-Case de consentement obligatoire ; le lien vers les mentions légales vient de
-`event.legalUrl`.
+- `POST` : enregistre le ou les coureurs ; refuse un e-mail déjà inscrit
+  (`deja-inscrit`), des champs invalides (`invalide`) et tout dépassement des
+  50 dossards (`complet`) ; ignore les robots (pot de miel `_gotcha`) ; neutralise un
+  texte qui commencerait par `=`, `+`, `-` ou `@` (sinon lu comme une formule).
+- `GET` : le nombre de dossards restants, affiché sous le formulaire.
+
+L'URL de l'application Web (`https://script.google.com/macros/s/…/exec`) va dans
+`VITE_INSCRIPTION_ENDPOINT` (`.env.production`, valeur publique). Le site envoie le JSON
+en `text/plain` (`src/sections/inscription.ts`) : une requête « simple », sans pré-vol
+CORS, qu'Apps Script accepte et dont la réponse se lit depuis le site. Sans URL, le
+bouton est désactivé (« Les inscriptions ouvrent très bientôt »).
 
 ## Contenu
 
 | Fichier | Statut |
 |---|---|
-| `src/content/event.ts` | Nom, édition, date, heure de départ, tarif, dossards, organisateur, contact, mentions légales. `null` = placeholder `[… À CONFIRMER]` à l'écran. |
+| `src/content/event.ts` | Nom, édition, lieu, date, heure de départ, tarif, dossards. `null` = placeholder `[… À CONFIRMER]` à l'écran. |
 | `data/boucle.gpx` | Tracé officiel (lat/lon/ele uniquement : heure et fréquence cardiaque retirées). |
 
 Le compte à rebours vise `event.date` à `event.startTime` (heure de Paris) ; tant que
