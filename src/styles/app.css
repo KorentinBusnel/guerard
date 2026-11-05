@@ -481,9 +481,6 @@
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
-  .inscription__note {
-    color: color-mix(in oklab, var(--color-charcoal) 85%, var(--color-topo));
-  }
   .hp {
     position: absolute;
     left: -9999px;
