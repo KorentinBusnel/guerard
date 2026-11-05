@@ -3,6 +3,8 @@ dist/
 .env
 .env.*
 !.env.example
+# valeurs publiques du build de prod (clé MapMap navigateur) : versionnées
+!.env.production
 # copiés depuis node_modules par scripts/copy-maplibre-worker.mjs
 public/vendor/maplibre/
 .DS_Store
