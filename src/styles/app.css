@@ -525,8 +525,7 @@
   }
 
   /* ---------- Page 2 : la boucle, l'inscription, le relief ---------- */
-  /* Transparente devant la scène 3D (fixe) : on la fait tourner en glissant entre les
-     blocs. Le bas reste libre pour l'attribution et le logo de la carte. */
+  /* Opaque : elle recouvre la scène 3D (illisible derrière un formulaire et un profil). */
   .boucle {
     position: relative;
     z-index: 10;
@@ -535,10 +534,7 @@
     gap: 40px;
     min-height: 100dvh;
     padding: 48px 0 40px;
-    pointer-events: none;
-  }
-  .boucle :where(a, button, form) {
-    pointer-events: auto;
+    background: var(--color-carbon);
   }
   .boucle__grid {
     display: grid;
@@ -588,22 +584,14 @@
     flex-direction: column;
     gap: 16px;
   }
-  .relief__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px 24px;
-    padding: 0 var(--gutter);
-  }
   .relief__caption {
+    padding: 0 var(--gutter);
     color: var(--color-topo);
   }
   .relief__plot {
     position: relative;
     height: clamp(200px, 32vh, 380px);
-    /* survoler le profil place le point sur la boucle 3D (src/map/interact.ts) */
-    pointer-events: auto;
+    /* survoler le profil : km et altitude du point (src/map/interact.ts) */
     cursor: crosshair;
     touch-action: pan-y;
   }
@@ -697,11 +685,6 @@
     right: var(--gutter);
   }
   @media (max-width: 640px) {
-    /* la scène passe derrière le relief : un voile pour que le profil se lise */
-    .relief {
-      padding-top: 16px;
-      background: rgb(22 27 19 / 0.6);
-    }
     /* trop serré pour tout dire : les montées restent en légende de la page */
     .relief__label--climb,
     .relief__label--low {
@@ -811,13 +794,6 @@
     background:
       linear-gradient(180deg, rgb(22 27 19 / 0.9) 0%, rgb(22 27 19 / 0.55) 28%, rgb(22 27 19 / 0) 44%),
       linear-gradient(0deg, rgb(22 27 19 / 0.92) 0%, rgb(22 27 19 / 0) 30%);
-  }
-  .map-scrim::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(0deg, rgb(22 27 19 / 0.7) 0%, rgb(22 27 19 / 0.55) 34%, rgb(22 27 19 / 0) 50%);
-    opacity: var(--page2, 0);
   }
   @media (max-width: 640px) {
     .map-scrim {

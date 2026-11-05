@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { routeSvgPath, viewStrings } from "./src/content/view.ts";
 import { viewHtml } from "./src/content/blocks.ts";
@@ -58,13 +58,18 @@ function preloadFonts(): Plugin {
     transformIndexHtml: {
       order: "post",
       handler(_html, ctx) {
-        const files = Object.keys(ctx.bundle ?? {}).filter((f) => CRITICAL_FONTS.some((re) => re.test(f)));
+        const bundle = ctx.bundle ?? {};
+        const files = Object.keys(bundle).filter((f) => CRITICAL_FONTS.some((re) => re.test(f)));
         if (files.length !== CRITICAL_FONTS.length) throw new Error(`polices critiques introuvables dans le bundle : ${files.join(", ")}`);
-        return files.map((f) => ({
+        const tags: HtmlTagDescriptor[] = files.map((f) => ({
           tag: "link",
           attrs: { rel: "preload", as: "font", type: "font/woff2", href: `${base}${f}`, crossorigin: "" },
-          injectTo: "head" as const,
+          injectTo: "head",
         }));
+        // Pas de préchargement de la scène 3D ici : ses 370 Ko (gzip) prendraient la bande
+        // passante des polices et retarderaient le premier affichage (LCP). main.ts la
+        // télécharge dès la fin du chargement.
+        return tags;
       },
     },
   };

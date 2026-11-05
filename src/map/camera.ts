@@ -1,13 +1,11 @@
 /**
- * Caméra de la scène 3D (fond fixe des deux pages) : la boucle en grand, en orbite lente.
+ * Caméra de la scène 3D (fond de la page 1) : la boucle en grand, en orbite lente.
  *
- * - Deux cadrages : sous le titre de la page 1, puis (grand écran) dans l'espace libre de
- *   la page 2, entre les chiffres, le formulaire et le relief ; on passe de l'un à l'autre
- *   au fil du défilement.
+ * - Cadrage : la boucle occupe l'espace libre sous le titre, à côté du compte à rebours.
  * - On peut la faire tourner à la main (glisser) : l'orbite reprend après une pause.
  * - « Vue de dessus » / « Vue 3D » : transition d'inclinaison, animée dans la même boucle
  *   que l'orbite (un easeTo serait coupé par le jumpTo de l'orbite à l'image suivante).
- * - Arrêt complet quand la scène est cachée (onglet en arrière-plan, pied de page).
+ * - Arrêt complet quand la scène est cachée (page 2 à l'écran, onglet en arrière-plan).
  */
 import type * as maplibregl from "maplibre-gl";
 import type { PaddingOptions } from "maplibre-gl";
@@ -36,11 +34,7 @@ export class HeliCamera {
   private holdUntil = 0;
   /** Raisons d'arrêt complet (onglet caché, scène hors écran…). */
   private readonly pausedBy = new Set<string>();
-  private frames: [Frame, Frame] = [
-    { zoom: 13.5, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-    { zoom: 13.5, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-  ];
-  private progress = 0;
+  private frame: Frame = { zoom: 13.5, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
   private zoomOffset = 0;
   private targetZoomOffset = 0;
   /** Vitesse de rotation laissée par un glisser (°/s), amortie : l'inertie. */
@@ -73,36 +67,21 @@ export class HeliCamera {
     return { zoom, padding };
   }
 
-  /** Page 1 : sous le titre, à côté du compte à rebours. Page 2 : à gauche du formulaire. */
-  private computeFrames() {
+  /** Sous le titre, à côté du compte à rebours (mobile : entre titre et compte à rebours). */
+  private computeFrame() {
     const vh = window.innerHeight;
     const vw = window.innerWidth;
-    if (this.opts.mobile) {
-      const f = this.frameIn({ top: Math.round(vh * 0.33), bottom: Math.round(vh * 0.3), left: 8, right: 8 });
-      this.frames = [f, f];
-      return;
-    }
-    this.frames = [
-      this.frameIn({ top: Math.round(vh * 0.32), bottom: Math.round(vh * 0.08), left: Math.round(vw * 0.28), right: Math.round(vw * 0.02) }),
-      // colonne du formulaire (30rem + gouttières) à droite, relief en bas
-      this.frameIn({ top: Math.round(vh * 0.27), bottom: Math.round(vh * 0.31), left: Math.round(vw * 0.03), right: Math.min(Math.round(vw * 0.45), 600) }),
-    ];
+    this.frame = this.opts.mobile
+      ? this.frameIn({ top: Math.round(vh * 0.33), bottom: Math.round(vh * 0.3), left: 8, right: 8 })
+      : this.frameIn({ top: Math.round(vh * 0.32), bottom: Math.round(vh * 0.08), left: Math.round(vw * 0.28), right: Math.round(vw * 0.02) });
   }
 
   private current() {
-    const [a, b] = this.frames;
-    const t = this.progress;
-    const mix = (x: number, y: number) => x + (y - x) * t;
     const [[w, s], [e, n]] = routeBounds();
     return {
       center: [(w + e) / 2, (s + n) / 2] as [number, number],
-      zoom: mix(a.zoom, b.zoom) + this.zoomOffset,
-      padding: {
-        top: mix(a.padding.top, b.padding.top),
-        bottom: mix(a.padding.bottom, b.padding.bottom),
-        left: mix(a.padding.left, b.padding.left),
-        right: mix(a.padding.right, b.padding.right),
-      },
+      zoom: this.frame.zoom + this.zoomOffset,
+      padding: this.frame.padding,
       bearing: this.bearing,
       pitch: this.pitch,
     };
@@ -114,18 +93,9 @@ export class HeliCamera {
 
   /** Place la caméra sur la boucle (et recadre après un redimensionnement). */
   orbit() {
-    this.computeFrames();
+    this.computeFrame();
     this.apply();
     this.kick();
-  }
-
-  /** Défilement : 0 = page 1 à l'écran, 1 = page 2. */
-  setProgress(t: number) {
-    const p = Math.min(Math.max(t, 0), 1);
-    if (Math.abs(p - this.progress) < 0.001) return;
-    this.progress = p;
-    // si la boucle d'animation tourne, elle appliquera le cadrage à l'image suivante
-    if (!this.raf) this.apply();
   }
 
   get spinning() {

@@ -13,7 +13,7 @@ const mobile = window.matchMedia("(max-width: 640px)").matches;
 if (capture) document.documentElement.classList.add("capture", `capture-${capture}`);
 document.documentElement.classList.toggle("reduced-motion", reducedMotion);
 
-/** Sans WebGL 2 (exigé par MapLibre 6) : image statique de la scène derrière les pages. */
+/** Sans WebGL 2 (exigé par MapLibre 6) : image statique de la scène derrière la page 1. */
 function showMapFallback() {
   document.documentElement.classList.add("no-webgl");
   const poster = document.getElementById("map-poster")!;
@@ -59,27 +59,17 @@ viewBtn.addEventListener("click", () => {
   viewBtn.textContent = topDown ? "Vue 3D" : "Vue de dessus";
 });
 
-// Voile de la page 2 : plus sombre en bas à mesure qu'on y arrive (légendes du relief
-// lisibles sur la scène). Variable CSS lue par .map-scrim::after.
-const mapLayer = document.getElementById("map-layer")!;
-let scrimRaf = 0;
-const updateScrim = () => {
-  scrimRaf = 0;
-  mapLayer.style.setProperty("--page2", String(Math.min(Math.max(window.scrollY / window.innerHeight, 0), 1)));
-};
-window.addEventListener("scroll", () => (scrimRaf ||= requestAnimationFrame(updateScrim)), { passive: true });
-updateScrim();
-
 // Test d'API sans créer de contexte (créer un contexte WebGL coûte cher au chargement) ;
 // un vrai échec à la création de la carte bascule aussi sur l'image statique.
 const webgl = typeof WebGL2RenderingContext !== "undefined";
-const pages = [document.getElementById("accueil")!, document.getElementById("boucle")!];
+const accueil = document.getElementById("accueil")!;
 
 if (!webgl) {
   showMapFallback();
 } else {
-  // La scène 3D (MapLibre + SDK, ~1 Mo, chunk séparé) démarre après le premier affichage :
-  // à la première interaction, ou peu après le chargement. Le titre et le compte à rebours
+  // La scène 3D (MapLibre + SDK, ~1 Mo, chunk séparé) démarre juste après le premier
+  // affichage : dès que le navigateur souffle après le
+  // chargement, ou à la première interaction. Le titre et le compte à rebours
   // s'affichent tout de suite, devant le tracé dessiné en SVG.
   const INTERACTIONS = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart", "wheel"] as const;
   let started = false;
@@ -88,7 +78,7 @@ if (!webgl) {
     started = true;
     for (const type of INTERACTIONS) window.removeEventListener(type, startMap);
     import("./map/boot")
-      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, pages, userPaused, onZoomChange }))
+      .then(({ bootMap }) => bootMap({ mobile, reducedMotion, capture, page: accueil, userPaused, onZoomChange }))
       .then((s) => {
         scene = s;
         viewBtn.hidden = false;
@@ -104,7 +94,8 @@ if (!webgl) {
   if (capture) startMap();
   else {
     for (const type of INTERACTIONS) window.addEventListener(type, startMap, { once: true, passive: true });
-    const idle = () => window.setTimeout(startMap, 3500);
+    // Safari n'a pas requestIdleCallback : un court délai le remplace.
+    const idle = () => (typeof requestIdleCallback === "function" ? requestIdleCallback(startMap, { timeout: 500 }) : setTimeout(startMap, 200));
     if (document.readyState === "complete") idle();
     else window.addEventListener("load", idle, { once: true });
   }
