@@ -14,10 +14,11 @@ export const event = {
   date: "2026-11-28" as string | null,
   /** Heure du premier départ, `HH:MM`, heure de Paris. Le compte à rebours la vise dès qu'elle est connue. */
   startTime: "10:00" as string | null,
-  /** Tarif d'inscription, en euros. */
-  priceEur: 25 as number | null,
+  /** Tarif d'inscription, en euros, et ce qu'il comprend. */
+  priceEur: 35 as number | null,
+  priceIncludes: "nourriture comprise" as string | null,
   /** Nombre de dossards (le script du Google Sheet refuse au-delà : scripts/google-sheet). */
-  bibs: 50 as number | null,
+  bibs: 40 as number | null,
 } as const;
 
 /** Règles du format backyard (brief). La distance AFFICHÉE vient toujours du GPX. */

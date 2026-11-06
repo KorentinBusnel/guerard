@@ -43,7 +43,7 @@ JS du site), jamais de secret.
 | `VITE_INSCRIPTION_ENDPOINT` | navigateur | URL de l'application Web Apps Script qui écrit dans le Google Sheet (ci-dessous). Vide → bouton désactivé. |
 | `VITE_MAPMAP_KEY` | navigateur | Clé MapMap `snk_…` (dans `.env.production`). **Nécessaire en prod** pour la forêt, les routes, les rivières et les villages (sans elle : relief seul). Clé émise par `POST https://api.mapmap.ai/v1/keys` ; provisoire (1 000 appels, 72 h) tant que l'e-mail de confirmation n'est pas validé. |
 | `VITE_MAPMAP_STYLE_URL` | navigateur | Style hébergé, écrit dans `.env.local` par `npm run create:style`. |
-| `SITE_URL` | build | URL publique (rend `og:image` absolue). |
+| `SITE_URL` | build | URL publique (`.env.production`) : rend `og:image`, `og:url` et `canonical` absolues, sans quoi les messageries n'affichent pas l'aperçu du lien. À défaut, le domaine de production que Vercel expose au build. |
 | `MAPMAP_API_KEY` | scripts uniquement | `prepare:route`, `create:style`, `static:map`. Jamais dans le bundle : Vite n'expose que `VITE_*`. |
 
 ## Inscription → Google Sheet
@@ -58,7 +58,7 @@ Le pont entre le site et la feuille est un script Apps Script lié à la feuille
 
 - `POST` : enregistre le ou les coureurs ; refuse un e-mail déjà inscrit
   (`deja-inscrit`), des champs invalides (`invalide`) et tout dépassement des
-  50 dossards (`complet`) ; ignore les robots (pot de miel `_gotcha`) ; neutralise un
+  40 dossards (`complet`) ; ignore les robots (pot de miel `_gotcha`) ; neutralise un
   texte qui commencerait par `=`, `+`, `-` ou `@` (sinon lu comme une formule).
 - `GET` : le nombre de dossards restants, affiché sous le formulaire.
 
@@ -126,7 +126,7 @@ carte :
   recalculé à chaque image).
 - **Rendu HD** : anticrénelage du canevas (`canvasContextAttributes.antialias`),
   densité de pixels au moins 1,5 sur ordinateur (suréchantillonnage des écrans
-  standard, plafonnée à 2 ; 2,5 sur mobile) ; ombrage du relief à deux lumières
+  standard, plafonnée à 2) ; ombrage du relief à deux lumières
   (`hillshade-method: multidirectional`).
 - **Interactions** (`src/map/interact.ts`) : glisser pour tourner (et incliner à la
   souris), avec inertie ; deux doigts pour zoomer et pivoter ; Ctrl / ⌘ + molette (ou
@@ -134,8 +134,12 @@ carte :
   boutons − / + ; double-clic pour revenir au cadrage. Survoler (ou toucher) le tracé
   affiche le kilomètre et l'altitude du point, repérés aussi sur le grand profil de la
   page 2 ; survoler le profil affiche le kilomètre et l'altitude sur le profil.
-- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre sous le titre, à
-  côté du compte à rebours ; orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
+- **Caméra** (`src/map/camera.ts`) : la boucle occupe l'espace libre de la page 1,
+  mesuré dans le DOM (`measureFreeArea`, `src/map/boot.ts`) : sous le titre et à droite
+  du compte à rebours quand les commandes sont à côté (grand écran), entre le titre et
+  le compte à rebours quand tout est empilé (téléphone, tablette), à droite du compte à
+  rebours s'il ne reste pas assez de hauteur (téléphone à l'horizontale) ; recadrage à
+  chaque changement de mise en page (`ResizeObserver`). Orbite lente, glisser pour tourner (au doigt : horizontal seulement, le vertical reste
   au défilement), transition vue de dessus / 3D. Relief exagéré ×2,2 (×1,8 mobile).
 - **Chargement** : MapLibre + SDK (~1 Mo, 370 Ko gzip) sont un chunk séparé, téléchargé
   dès la fin du chargement de la page (`requestIdleCallback`, ou première interaction)
@@ -144,6 +148,9 @@ carte :
   sous les yeux). Avant, le tracé est dessiné en SVG à la même place. Pas de
   préchargement dans le HTML : il prendrait la bande passante des polices (LCP).
   Tout s'arrête quand la page 1 quitte l'écran ou que l'onglet est caché.
+- **Poids** : 52 Ko avant la carte ; la carte ajoute ~1,3 Mo sur mobile, dont 0,8 Mo de
+  relief (tuiles MNT plafonnées au zoom 12 au lieu de 15 : rendu identique, 3 fois moins
+  lourd). `vercel.json` met en cache un an les fichiers versionnés de `/assets/`.
 - **Fond épuré** (`trimBasemap`, `src/map/forestMap.ts`) : sur le relief ombré, on ne
   garde que la forêt (seule couverture du sol affichée), l'eau et les rivières, les
   routes (sans chemins ni rail) et les noms de villes et villages ; bâti, points
@@ -169,8 +176,8 @@ carte :
 
 ## Lighthouse (build prod, Chromium headless sans GPU)
 
-Mobile : accessibilité 100, bonnes pratiques 100, SEO 100 ; premier affichage 0,9 s,
-LCP 1,2 s, CLS 0,007. Performance 60 : la scène 3D démarre désormais juste après le
+Mobile : accessibilité 100, SEO 100 ; premier affichage 1 s, LCP 1,2 s, CLS 0,008.
+Performance 60 (et bonnes pratiques parfois non calculées : délai dépassé) : la scène 3D démarre désormais juste après le
 chargement, et Lighthouse, sans GPU, la rend en WebGL logiciel (chaque image de carte
 devient une longue tâche, TBT ≈ 90 s). Sur un vrai appareil (GPU), ce coût n'existe pas.
 Le démarrage à la première interaction ou après 3,5 s donnait 100, mais la carte
