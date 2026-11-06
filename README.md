@@ -60,7 +60,13 @@ Le pont entre le site et la feuille est un script Apps Script lié à la feuille
   (`deja-inscrit`), des champs invalides (`invalide`) et tout dépassement des
   40 dossards (`complet`) ; ignore les robots (pot de miel `_gotcha`) ; neutralise un
   texte qui commencerait par `=`, `+`, `-` ou `@` (sinon lu comme une formule).
-- `GET` : le nombre de dossards restants, affiché sous le formulaire.
+- `GET` : le nombre de dossards restants (et le plafond du script, `dossards`).
+
+La page fait aussi respecter **son** nombre de dossards (`event.bibs`, 40) : elle déduit
+les inscrits de la réponse du script (plafond − restants ; 50 pour un script déployé
+avant l'ajout de `dossards`), affiche les places restantes, refuse un duo quand il ne
+reste qu'un dossard et ferme le formulaire une fois plein. Le plafond du script reste le
+garde-fou côté serveur : le passer à 40 et le redéployer (nouvelle version).
 
 L'URL de l'application Web (`https://script.google.com/macros/s/…/exec`) va dans
 `VITE_INSCRIPTION_ENDPOINT` (`.env.production`, valeur publique). Le site envoie le JSON

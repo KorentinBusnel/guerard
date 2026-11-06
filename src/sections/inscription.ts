@@ -3,16 +3,20 @@
  *
  * `VITE_INSCRIPTION_ENDPOINT` est l'URL de l'application Web Apps Script liée à la
  * feuille (scripts/google-sheet/inscriptions.gs) :
- * - GET  → `{ ok, restants, dossards }` : les dossards encore libres, affichés sous le
- *   formulaire (si le plafond du script est celui de la page) ;
+ * - GET  → `{ ok, restants, dossards }` : d'où le nombre d'inscrits ;
  * - POST → une ligne par coureur, `{ ok, restants, dossards }` ou `{ ok: false, error }`
  *   (`complet`, `deja-inscrit`, `invalide`).
+ * La page fait aussi respecter SON nombre de dossards (`event.bibs`) : elle compte les
+ * inscrits (plafond du script − restants) et ferme le formulaire une fois plein, même si
+ * le script déployé compte sur un plafond plus haut (version sans `dossards` : 50).
  * Le corps part en `text/plain` (JSON dedans) : une requête « simple », sans pré-vol CORS,
  * qu'Apps Script accepte ; sa réponse est lisible depuis le site.
  */
 import { event } from "../content/event";
 
 const ENDPOINT = (import.meta.env.VITE_INSCRIPTION_ENDPOINT as string | undefined) || "";
+/** Plafond du script déployé quand il ne le renvoie pas (version d'avant `dossards`). */
+const LEGACY_SCRIPT_CAP = 50;
 
 interface SheetReply {
   ok: boolean;
@@ -36,6 +40,8 @@ export function initInscription() {
   const status = form.querySelector<HTMLElement>("[data-status]")!;
   const restantsEl = form.querySelector<HTMLElement>("[data-restants]");
   let full = false;
+  /** Dossards encore libres selon la page ; inconnu tant que la feuille n'a pas répondu. */
+  let restants: number | null = null;
 
   const say = (text: string, tone: "info" | "error" = "info") => {
     status.textContent = text;
@@ -43,11 +49,12 @@ export function initInscription() {
   };
 
   const showRestants = (reply: SheetReply) => {
-    const n = reply.restants;
-    // Restants affichés seulement si le script compte sur le même nombre de dossards que
-    // la page : sinon (script pas encore redéployé), le chiffre serait faux.
-    if (typeof n !== "number" || !restantsEl || reply.dossards !== event.bibs) return;
-    restantsEl.textContent = n > 0 ? ` · ${n} restant${n > 1 ? "s" : ""}` : " · complet";
+    if (typeof reply.restants !== "number") return;
+    // inscrits = plafond du script − ses restants ; restants = dossards de la page − inscrits
+    const inscrits = Math.max((reply.dossards ?? LEGACY_SCRIPT_CAP) - reply.restants, 0);
+    const n = event.bibs === null ? reply.restants : Math.max(event.bibs - inscrits, 0);
+    restants = n;
+    if (restantsEl) restantsEl.textContent = n > 0 ? ` · ${n} restant${n > 1 ? "s" : ""}` : " · complet";
     full = n <= 0;
     if (full) {
       submit.disabled = true;
@@ -85,6 +92,10 @@ export function initInscription() {
     if (submit.disabled || full) return;
     const data = new FormData(form);
     const duo = data.get("formule") === "duo";
+    if (restants !== null && (duo ? 2 : 1) > restants) {
+      say(restants === 1 ? "Il ne reste qu'un dossard : inscription seule uniquement." : ERRORS.complet, "error");
+      return;
+    }
     const text = (name: string) => String(data.get(name) ?? "").trim();
     const payload = {
       formule: duo ? "duo" : "solo",
