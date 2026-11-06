@@ -1,4 +1,4 @@
-import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite";
+import { defineConfig, loadEnv, type HtmlTagDescriptor, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { routeSvgPath, viewStrings } from "./src/content/view.ts";
 import { viewHtml } from "./src/content/blocks.ts";
@@ -10,13 +10,13 @@ import { escapeHtml } from "./src/lib/html.ts";
  * Les textes viennent de src/content (event.ts + route.json) et sont écrits dans le HTML
  * au build : lisibles sans JS, indexables, sans saut de mise en page.
  */
-function contentTemplate(): Plugin {
+function contentTemplate(siteUrl: string): Plugin {
   return {
     name: "guerard-content",
     transformIndexHtml(html) {
-      // URL publique du site (SITE_URL au build) : og:image doit être absolue pour la
-      // plupart des aperçus de liens.
-      const site = (process.env.SITE_URL ?? "").replace(/\/$/, "");
+      // URL publique du site : og:image et og:url doivent être absolues, sinon WhatsApp,
+      // Facebook, LinkedIn ou iMessage n'affichent pas l'aperçu du lien.
+      const site = siteUrl.replace(/\/$/, "");
       const strings: Record<string, string> = {
         ...viewStrings(),
         ogImage: `${site}/img/og.jpg`,
@@ -75,8 +75,18 @@ function preloadFonts(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [tailwindcss(), contentTemplate(), preloadFonts()],
+/**
+ * URL publique : SITE_URL (.env.production ou environnement), sinon le domaine de
+ * production que Vercel expose au build.
+ */
+function siteUrlFor(mode: string): string {
+  const env = loadEnv(mode, process.cwd(), "");
+  if (env.SITE_URL) return env.SITE_URL;
+  return env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : "";
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [tailwindcss(), contentTemplate(siteUrlFor(mode)), preloadFonts()],
   // Seules les variables VITE_* atteignent le bundle : MAPMAP_API_KEY (serveur) reste hors du navigateur.
   envPrefix: "VITE_",
   build: {
@@ -84,4 +94,4 @@ export default defineConfig({
     // MapLibre + SDK forment un chunk à part, chargé après le premier rendu
     chunkSizeWarningLimit: 1400,
   },
-});
+}));

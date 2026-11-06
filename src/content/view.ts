@@ -23,6 +23,8 @@ export function viewStrings(): Record<string, string> {
     commune: event.place.commune,
     departement: event.place.departement,
     date: dateLabel(),
+    /** « Samedi 28 novembre 2026 » : en début de phrase. */
+    dateCap: dateLabel().replace(/^./, (c) => c.toUpperCase()),
     startTime: startTimeLabel(),
     startCoords: `${dms(lat, "N", "S")} ${dms(lng, "E", "O")}`,
     loopKm3: km(route.totalM, 3),
@@ -33,7 +35,10 @@ export function viewStrings(): Record<string, string> {
     climbsCount: String(route.climbs.length),
     climbs: route.climbs.map((c) => `${num(c.lengthM)} m à ${num(c.avgGrade, 1)} %`).join(" · "),
     loopMinutes: String(format.loopMinutes),
-    price: event.priceEur !== null ? `${num(event.priceEur)} € par coureur` : tbc("tarif"),
+    price:
+      event.priceEur !== null
+        ? `${num(event.priceEur)} € par coureur${event.priceIncludes ? `, ${event.priceIncludes}` : ""}`
+        : tbc("tarif"),
     bibs: event.bibs !== null ? num(event.bibs) : tbc("nombre de dossards"),
   };
 }

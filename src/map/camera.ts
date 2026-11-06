@@ -18,6 +18,14 @@ const ZOOM_RANGE = { min: -1.5, max: 2.5 } as const;
 const HOLD_AFTER_DRAG_MS = 2500;
 export const PITCH = { desktop: 60, mobile: 52, min: 0, max: 72 } as const;
 
+/** Marges (px) autour de l'espace où la boucle doit tenir. */
+export interface FreeArea {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
 interface Frame {
   zoom: number;
   padding: { top: number; bottom: number; left: number; right: number };
@@ -42,7 +50,7 @@ export class HeliCamera {
 
   constructor(
     private readonly map: maplibregl.Map,
-    private readonly opts: { mobile: boolean; reducedMotion: boolean },
+    private readonly opts: { mobile: boolean; reducedMotion: boolean; freeArea?: () => FreeArea | null },
   ) {
     this.pitch = this.targetPitch = opts.mobile ? PITCH.mobile : PITCH.desktop;
     this.spin = !opts.reducedMotion;
@@ -67,13 +75,20 @@ export class HeliCamera {
     return { zoom, padding };
   }
 
-  /** Sous le titre, à côté du compte à rebours (mobile : entre titre et compte à rebours). */
+  /**
+   * L'espace libre mesuré dans la page (`freeArea`), sinon des proportions par défaut :
+   * sous le titre, à côté du compte à rebours (mobile : entre titre et compte à rebours).
+   */
   private computeFrame() {
     const vh = window.innerHeight;
     const vw = window.innerWidth;
-    this.frame = this.opts.mobile
-      ? this.frameIn({ top: Math.round(vh * 0.33), bottom: Math.round(vh * 0.3), left: 8, right: 8 })
-      : this.frameIn({ top: Math.round(vh * 0.32), bottom: Math.round(vh * 0.08), left: Math.round(vw * 0.28), right: Math.round(vw * 0.02) });
+    const measured = this.opts.freeArea?.();
+    this.frame = this.frameIn(
+      measured ??
+        (this.opts.mobile
+          ? { top: Math.round(vh * 0.33), bottom: Math.round(vh * 0.3), left: 8, right: 8 }
+          : { top: Math.round(vh * 0.32), bottom: Math.round(vh * 0.08), left: Math.round(vw * 0.28), right: Math.round(vw * 0.02) }),
+    );
   }
 
   private current() {

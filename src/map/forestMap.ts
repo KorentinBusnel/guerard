@@ -23,6 +23,8 @@ import "./vendor.css";
 
 /** Le SDK nomme ainsi la couche d'ombrage qu'il ajoute (repli DEV uniquement). */
 const SDK_HILLSHADE_LAYER = "mapmap-hillshade";
+/** Zoom maximal des tuiles de relief (MNT terrarium, 256 px). */
+const TERRAIN_MAXZOOM = 12;
 const TRANSPARENT = "rgba(0, 0, 0, 0)";
 
 export type StyleMode = "hosted" | "sdk-dev";
@@ -60,6 +62,9 @@ function tuneDevHillshade(map: maplibregl.Map) {
   const ground = forestTheme.palette.landcover;
   // Deux lumières (nord-ouest rasante + ouest douce) : un modelé plus fin qu'une seule
   // source, sans écraser les fonds de vallée.
+  // Pas de transition : passer d'une couleur à deux (une par lumière) n'est pas interpolable.
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-highlight-color-transition", { duration: 0, delay: 0 });
+  map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-shadow-color-transition", { duration: 0, delay: 0 });
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-method", "multidirectional");
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-direction", [HILLSHADE.direction, 255]);
   map.setPaintProperty(SDK_HILLSHADE_LAYER, "hillshade-illumination-altitude", [35, 55]);
@@ -247,7 +252,7 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
 
   const styleUrl = import.meta.env.VITE_MAPMAP_STYLE_URL as string | undefined;
   const styleMode: StyleMode = styleUrl ? "hosted" : "sdk-dev";
-  if (styleMode === "sdk-dev") {
+  if (styleMode === "sdk-dev" && import.meta.env.DEV) {
     console.warn(
       "[guerard] VITE_MAPMAP_STYLE_URL absent : repli DEV sur le compilateur réduit du SDK. " +
         "Lancer `npm run create:style` (clé MAPMAP_API_KEY requise) pour le style hébergé.",
@@ -263,7 +268,10 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
     center: [lng0, lat0],
     zoom: 13.5,
     // Style hébergé : il porte déjà son ombrage → hillshade SDK off (sinon double ombrage).
-    terrain: { exaggeration, hillshade: styleMode === "sdk-dev" },
+    // Relief : tuiles plafonnées au zoom 12 (au lieu de 15). Le relief de la Brie est doux :
+    // la différence ne se voit pas, mais la carte charge 3 fois moins de relief
+    // (0,8 Mo au lieu de 2,5 Mo sur mobile).
+    terrain: { exaggeration, hillshade: styleMode === "sdk-dev", maxzoom: TERRAIN_MAXZOOM },
     // Logo et attribution : non supprimables, dans deux coins différents.
     logo: { position: "bottom-right" },
     attributionPosition: "bottom-left",
@@ -271,7 +279,7 @@ export async function createForestMap({ container, mobile }: ForestMapOptions): 
       // Rendu net : anticrénelage (arêtes du relief, tracé) et densité de pixels au moins
       // 1,5 (suréchantillonnage sur les écrans standard), plafonnée pour le GPU mobile.
       canvasContextAttributes: { antialias: true },
-      pixelRatio: Math.min(Math.max(window.devicePixelRatio || 1, mobile ? 1 : 1.5), mobile ? 2.5 : 2),
+      pixelRatio: Math.min(Math.max(window.devicePixelRatio || 1, mobile ? 1 : 1.5), 2),
       // Gestes gérés par l'app (src/map/interact.ts) : la molette et le glisser vertical
       // restent au défilement de la page.
       interactive: false,

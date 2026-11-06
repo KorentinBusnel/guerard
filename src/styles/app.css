@@ -280,11 +280,35 @@
     margin: 0;
     color: var(--color-sage);
   }
+  /* Téléphone : l'essentiel, pour laisser la place à la boucle entre le titre et le
+     compte à rebours (la distance et le format sont redits en page 2). */
   @media (max-width: 640px) {
-    .accueil__bottom {
-      gap: 16px;
+    .topbar .wordmark {
+      font-size: 28px;
     }
+    .accueil__title {
+      padding-top: 8px;
+    }
+    .accueil__bottom {
+      gap: 14px;
+    }
+    .countdown {
+      gap: 8px;
+    }
+    .countdown__note,
     .scene-ui__hint {
+      display: none;
+    }
+    /* les quatre commandes tiennent sur une ligne dès 360 px */
+    .scene-ui__buttons {
+      gap: 6px;
+    }
+    .scene-ui .btn-outline--small:not(.btn-outline--square) {
+      padding: 10px;
+    }
+  }
+  @media (max-width: 640px) and (max-height: 760px) {
+    .scene-ui__readout {
       display: none;
     }
   }
@@ -796,10 +820,15 @@
   .capture main,
   .capture .site-footer,
   .capture .skip-link,
-  .capture .accueil__bottom,
   .capture .scroll-cue,
-  .capture .topbar .btn-outline {
+  .capture .topbar .btn-outline,
+  .capture .scene-ui,
+  .capture .countdown > :not(.countdown__date) {
     display: none;
+  }
+  /* l'image de partage garde la date (sous le titre, en bas à gauche) */
+  .capture-og .countdown__date {
+    font-size: 22px;
   }
   .capture-fallback .accueil,
   .capture-fallback .map-scrim {

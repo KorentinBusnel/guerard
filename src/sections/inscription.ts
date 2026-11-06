@@ -3,8 +3,9 @@
  *
  * `VITE_INSCRIPTION_ENDPOINT` est l'URL de l'application Web Apps Script liée à la
  * feuille (scripts/google-sheet/inscriptions.gs) :
- * - GET  → `{ ok, restants }` : les dossards encore libres, affichés sous le formulaire ;
- * - POST → une ligne par coureur, `{ ok, restants }` ou `{ ok: false, error }`
+ * - GET  → `{ ok, restants, dossards }` : les dossards encore libres, affichés sous le
+ *   formulaire (si le plafond du script est celui de la page) ;
+ * - POST → une ligne par coureur, `{ ok, restants, dossards }` ou `{ ok: false, error }`
  *   (`complet`, `deja-inscrit`, `invalide`).
  * Le corps part en `text/plain` (JSON dedans) : une requête « simple », sans pré-vol CORS,
  * qu'Apps Script accepte ; sa réponse est lisible depuis le site.
@@ -16,6 +17,8 @@ const ENDPOINT = (import.meta.env.VITE_INSCRIPTION_ENDPOINT as string | undefine
 interface SheetReply {
   ok: boolean;
   restants?: number;
+  /** Plafond de dossards du script ; absent des anciennes versions. */
+  dossards?: number;
   error?: "complet" | "deja-inscrit" | "invalide";
 }
 
@@ -39,8 +42,11 @@ export function initInscription() {
     status.dataset.tone = tone;
   };
 
-  const showRestants = (n: number | undefined) => {
-    if (typeof n !== "number" || !restantsEl) return;
+  const showRestants = (reply: SheetReply) => {
+    const n = reply.restants;
+    // Restants affichés seulement si le script compte sur le même nombre de dossards que
+    // la page : sinon (script pas encore redéployé), le chiffre serait faux.
+    if (typeof n !== "number" || !restantsEl || reply.dossards !== event.bibs) return;
     restantsEl.textContent = n > 0 ? ` · ${n} restant${n > 1 ? "s" : ""}` : " · complet";
     full = n <= 0;
     if (full) {
@@ -71,7 +77,7 @@ export function initInscription() {
   // Dossards restants (sans bloquer l'affichage si la feuille ne répond pas).
   fetch(ENDPOINT)
     .then((res) => res.json() as Promise<SheetReply>)
-    .then((reply) => showRestants(reply.restants))
+    .then((reply) => showRestants(reply))
     .catch(() => {});
 
   form.addEventListener("submit", async (e) => {
@@ -95,7 +101,7 @@ export function initInscription() {
       const res = await fetch(ENDPOINT, { method: "POST", body: JSON.stringify(payload) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const reply = (await res.json()) as SheetReply;
-      showRestants(reply.restants);
+      showRestants(reply);
       if (!reply.ok) {
         say(ERRORS[reply.error ?? "invalide"] ?? ERRORS.invalide, "error");
         return;

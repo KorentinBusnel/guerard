@@ -10,8 +10,13 @@
  *
  * POST (JSON envoyé en text/plain par le site) : une ligne par coureur (deux pour un duo).
  * GET : le nombre de dossards restants, affiché sur la page.
+ * Chaque réponse porte `dossards` (le plafond ci-dessous) : le site n'affiche les
+ * restants que si ce plafond est le sien (évite un compte faux après un changement).
+ *
+ * Après modification de ce fichier : Déployer → Gérer les déploiements → crayon →
+ * Version : « Nouvelle version » → Déployer (l'URL /exec ne change pas).
  */
-const DOSSARDS = 50;
+const DOSSARDS = 40;
 const EDITION = "Again and Again";
 const EMAIL_COL = 4; // Horodatage | Formule | Nom et prénom | E-mail | Binôme | Édition
 
@@ -28,7 +33,7 @@ function doPost(e) {
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
     const taken = Math.max(sheet.getLastRow() - 1, 0);
-    if (taken + runners.length > DOSSARDS) return json({ ok: false, error: "complet", restants: Math.max(DOSSARDS - taken, 0) });
+    if (taken + runners.length > DOSSARDS) return json({ ok: false, error: "complet", restants: Math.max(DOSSARDS - taken, 0), dossards: DOSSARDS });
     const emails = taken
       ? sheet.getRange(2, EMAIL_COL, taken, 1).getValues().map((row) => String(row[0]).toLowerCase())
       : [];
@@ -40,7 +45,7 @@ function doPost(e) {
       const binome = runners.length === 2 ? runners[1 - i].nom : "";
       sheet.appendRow([now, formule, r.nom, r.email, binome, EDITION]);
     });
-    return json({ ok: true, restants: DOSSARDS - taken - runners.length });
+    return json({ ok: true, restants: DOSSARDS - taken - runners.length, dossards: DOSSARDS });
   } finally {
     lock.releaseLock();
   }
@@ -49,7 +54,7 @@ function doPost(e) {
 function doGet() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
   const taken = Math.max(sheet.getLastRow() - 1, 0);
-  return json({ ok: true, restants: Math.max(DOSSARDS - taken, 0) });
+  return json({ ok: true, restants: Math.max(DOSSARDS - taken, 0), dossards: DOSSARDS });
 }
 
 /** Texte nettoyé ; un début « = + - @ » serait lu comme une formule par Sheets. */

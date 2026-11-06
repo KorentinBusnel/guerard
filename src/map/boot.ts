@@ -5,7 +5,7 @@
  * (src/map/interact.ts). La page 2, opaque, la recouvre.
  */
 import { createForestMap } from "./forestMap";
-import { HeliCamera } from "./camera";
+import { HeliCamera, type FreeArea } from "./camera";
 import { Runner } from "./runner";
 import { enableInteractions } from "./interact";
 
@@ -36,11 +36,38 @@ export interface Scene {
  */
 const REVEAL_MAX_MS = 2500;
 
+/**
+ * L'espace libre de la page 1, mesuré dans le DOM (en coordonnées de page : la page 1
+ * est en haut du document). Compte à rebours et commandes côte à côte (grand écran,
+ * téléphone à l'horizontale) : la boucle à droite du compte à rebours, sous le titre.
+ * Empilés (téléphone, tablette) : entre le titre et le compte à rebours, ou à droite
+ * de celui-ci s'il ne reste pas assez de hauteur (téléphone à l'horizontale).
+ */
+function measureFreeArea(): FreeArea | null {
+  const rect = (sel: string) => document.querySelector(sel)?.getBoundingClientRect();
+  const title = rect(".title-loop");
+  const countdown = rect(".countdown");
+  const ui = rect(".scene-ui");
+  if (!title || !countdown || !ui) return null;
+  const sy = window.scrollY;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const top = Math.round(title.bottom + sy + 14);
+  const stacked = ui.top >= countdown.bottom - 1;
+  if (stacked) {
+    const bottom = Math.max(Math.round(vh - (countdown.top + sy) + 12), 0);
+    // Assez de hauteur entre le titre et le compte à rebours : la boucle s'y loge.
+    // Sinon (téléphone à l'horizontale), elle passe à droite du compte à rebours.
+    if (vh - top - bottom >= 140 || vw - countdown.right < 280) return { top, bottom, left: 8, right: 8 };
+  }
+  return { top, bottom: Math.round(vh * 0.04), left: Math.round(countdown.right + 24), right: Math.round(vw * 0.02) };
+}
+
 export async function bootMap({ mobile, reducedMotion, capture, page, userPaused, onZoomChange }: BootOptions): Promise<Scene> {
   const container = document.getElementById("map")!;
   const fm = await createForestMap({ container, mobile });
   const still = reducedMotion || !!capture;
-  const camera = new HeliCamera(fm.map, { mobile, reducedMotion: still });
+  const camera = new HeliCamera(fm.map, { mobile, reducedMotion: still, freeArea: measureFreeArea });
   camera.orbit();
   camera.setSpin(!userPaused);
 
@@ -74,12 +101,19 @@ export async function bootMap({ mobile, reducedMotion, capture, page, userPaused
     { threshold: 0.15 },
   ).observe(page);
   document.addEventListener("visibilitychange", () => runner.setPaused("hidden", document.hidden));
-  // Rotation d'écran, fenêtre redimensionnée : on recadre la boucle.
+  // Rotation d'écran, fenêtre redimensionnée, ou mise en page de la page 1 qui change
+  // (boutons de la scène qui apparaissent, retour à la ligne) : on recadre la boucle.
   let resizeTimer = 0;
-  window.addEventListener("resize", () => {
+  const reframe = () => {
     window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => camera.orbit(), 200);
-  });
+    resizeTimer = window.setTimeout(() => camera.orbit(), 150);
+  };
+  window.addEventListener("resize", reframe);
+  const layout = new ResizeObserver(reframe);
+  for (const sel of [".accueil__title", ".accueil__bottom"]) {
+    const el = document.querySelector(sel);
+    if (el) layout.observe(el);
+  }
 
   document.body.setAttribute("data-map-ready", "");
   if (import.meta.env.DEV) Object.assign(window, { __map: fm.map, __fm: fm, __camera: camera, __runner: runner });
